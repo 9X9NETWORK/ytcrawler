@@ -21,10 +21,12 @@ sudo chown www-data:www-data /var/tmp/ytcrawl
 cd /var/www/
 git clone git@bitbucket.org:9x9group/ytcrawler.git
 
-3. api url
+3. update config.php with db access info
+
+4. api url
    http://yourwebhost/ytcrawler/crawlerAPI.php
 
-4. test
+5. test
   similar to above test session
 
 
