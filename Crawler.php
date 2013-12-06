@@ -107,7 +107,14 @@ class Crawler {
         $i = $item;
       }
 
-      $item = array(
+      # filter out unplayable video
+      # https://kb.teltel.com/kb/index.php/Filter_Invalid_Videos_in_YouTube_Channel_and_Playlist
+      if (isset($i->accessControl) and ($i->accessControl->embed == 'denied' or $i->accessControl->syndicate == 'denied') or (isset($i->status) and !(isset($i->status->reason) and $i->status->reason == 'limitedSyndication'))) {
+        # video is unplayable
+        continue;
+      }
+
+      $data = array(
         'chId' => $chId,
         'uploader' => $i->uploader,
         'crawlTime' => $this->crawlTime,
@@ -119,7 +126,7 @@ class Crawler {
         'description' => $i->description,
       );
 
-      $line = implode("\t", $item);
+      $line = implode("\t", $data);
       $lines[] = $line;
     }
 
