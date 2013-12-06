@@ -30,12 +30,20 @@ if ($crl->ytId == '') {
 $crl->get_yt_data();
 
 if ($crl->httpcode != '200') {
-  die('FAILED - ' . print_r($crl->ytData,true));
+  die('FAILED - httpcode: ' . $crl->httpcode . ' data: ' . print_r($crl->ytData,true));
 }
 
 $d = json_decode($crl->ytData);
 
+if (!isset($d->data->items)) {
+  die('FAILED - No Video entry');
+}
+
 $lines = $crl->parse_items($d->data->items);
+
+if ($lines == array()) {
+  die('FAILED - No Playable Video');
+}
 
 file_put_contents($outFile, implode("\n", $lines));
 
