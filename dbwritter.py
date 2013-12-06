@@ -18,7 +18,6 @@ fh.close()
 
 for line in config:
   data = line.split('=', 1)
-  print data
   if len(data) != 2:
     continue
 
