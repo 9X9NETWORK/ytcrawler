@@ -7,12 +7,38 @@ from array import *
 import MySQLdb
 import time, datetime
 
-dbcontent = MySQLdb.connect (host = "localhost",
-                             user = "root",
-                             passwd = "",
+dbhost = 'localhost'
+dbuser = 'root'
+dbpass = ''
+
+# get db info from config.php
+fh = open('config.php', 'r')
+config = fh.readlines()
+fh.close()
+
+for line in config:
+  data = line.split('=', 1)
+  print data
+  if len(data) != 2:
+    continue
+
+  key = data[0].strip()
+  value = data[1].strip().strip(';').strip("'")
+
+  if key == '$dbhost':
+    dbhost = value
+  elif key == '$dbuser':
+    dbuser = value
+  elif key == '$dbpass':
+    dbpass = value
+
+dbcontent = MySQLdb.connect (host = dbhost,
+                             user = dbuser,
+                             passwd = dbpass,
                              charset = "utf8",
                              use_unicode = True,
                              db = "nncloudtv_content")
+
 # get channel id
 cId = sys.argv[1]
 
