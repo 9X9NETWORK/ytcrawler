@@ -119,11 +119,12 @@ class Crawler {
         'uploader' => $i->uploader,
         'crawlTime' => $this->crawlTime,
         'id' => $i->id,
-        'title' => $i->title,
+        # remove LF and tab
+        'title' => str_replace("\t", '  ', str_replace("\n", '   ', $i->title)),
         'uploaded' => strtotime($i->uploaded),
         'duration' => $i->duration,
         'thumbnail' => $i->thumbnail->sqDefault,
-        'description' => $i->description,
+        'description' => str_replace("\t", '  ', str_replace("\n", '   ', $i->description)),
       );
 
       $line = implode("\t", $data);
