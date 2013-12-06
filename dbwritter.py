@@ -18,14 +18,17 @@ cId = sys.argv[1]
 
 # read corresponding filei !!! file name might need to be changed
 #url = 'http://channelwatch.9x9.tv/dan/ponderosa.feed.' + cId + 'txt'
-url = 'http://localhost:8080/images/test.txt'  #!!! testing file
-user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
-values = {'language' : 'Python' }
-headers = { 'User-Agent' : user_agent }
-data = urllib.urlencode(values)            
-req = urllib2.Request(url, data, headers)
-response = urllib2.urlopen(req)
+#url = 'http://localhost:8080/images/test.txt'  #!!! testing file
+#user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
+#values = {'language' : 'Python' }
+#headers = { 'User-Agent' : user_agent }
+#data = urllib.urlencode(values)            
+#req = urllib2.Request(url, data, headers)
+#response = urllib2.urlopen(req)
+fileName = '/var/tmp/ytcrawl/ponderosa.feed.' + cId + '.txt'
+response = open(fileName, 'r')
 feed = response.readlines()                  
+response.close()
 
 # parsing episode
 i = 1           
