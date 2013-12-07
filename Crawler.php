@@ -40,9 +40,8 @@ class Crawler {
       $username = $this->ytId;
     }
 
-    $ytAPI = 'http://gdata.youtube.com/feeds/api/users/' . $username . '/uploads?v=2&alt=jsonc&prettyprint=true';
+    $ytAPI = 'http://gdata.youtube.com/feeds/api/users/' . $username . '/uploads?v=2&alt=jsonc&start-index=1&max-results=50&prettyprint=true';
     $this->ytData = file_get_contents($ytAPI);
-    #$ytData = file_get_contents('testdata.json');
     $this->headers = $http_response_header;
     $this->httpcode = $this->header_code($this->headers);
     return $this->ytData;
@@ -53,9 +52,8 @@ class Crawler {
       $playlistId = $this->ytId;
     }
 
-    $ytAPI = 'http://gdata.youtube.com/feeds/api/playlists/'. $playlistId . '?v=2&alt=jsonc&prettyprint=true';
+    $ytAPI = 'http://gdata.youtube.com/feeds/api/playlists/'. $playlistId . '?v=2&alt=jsonc&start-index=1&max-results=50&prettyprint=true';
     $this->ytData = file_get_contents($ytAPI);
-    #$ytData = file_get_contents('testdata.json');
     $this->headers = $http_response_header;
     $this->httpcode = $this->header_code($this->headers);
     return $this->ytData;
@@ -109,7 +107,10 @@ class Crawler {
 
       # filter out unplayable video
       # https://kb.teltel.com/kb/index.php/Filter_Invalid_Videos_in_YouTube_Channel_and_Playlist
-      if (isset($i->accessControl) and ($i->accessControl->embed == 'denied' or $i->accessControl->syndicate == 'denied') or (isset($i->status) and !(isset($i->status->reason) and $i->status->reason == 'limitedSyndication'))) {
+      if (isset($i->accessControl) and 
+            ($i->accessControl->embed == 'denied' or $i->accessControl->syndicate == 'denied') or
+            (isset($i->status) and !(isset($i->status->reason) and $i->status->reason == 'limitedSyndication'))
+         ) {
         # video is unplayable
         continue;
       }
