@@ -89,19 +89,27 @@ for line in feed:
     baseTimestamp = timestamp 
 
   cursor = dbcontent.cursor() 
-  # write to nnepisode 
+  # make sure no duplication, currently base on video id
   cursor.execute("""
-     insert into nnepisode (channelId, name, intro, imageUrl, duration, seq, publishDate)
-                    values (%s, %s, %s, %s, %s, %s, from_unixtime(%s))
-     """, (cId, name, description, thumbnail, duration, i, timestamp))
-  eId = cursor.lastrowid
-  print "eId" + str(eId)
-  # write to nnprogram
-  cursor.execute("""
-     insert into nnprogram (channelId, episodeId, name, intro, imageUrl, duration, fileUrl, publishDate, contentType, isPublic, status)
-                   values (%s, %s, %s, %s, %s, %s, %s, from_unixtime(%s), 1, true, 0)
-     """, (cId, eId, name, description, thumbnail, duration, fileUrl, timestamp))
-  i = i + 1
+     select id from nnprogram where channelId = %s and fileUrl = %s 
+     """, (channelId, fileUrl))
+  count = cursor.rowcount
+  if count == 0:    
+    # write to nnepisode 
+    cursor.execute("""
+       insert into nnepisode (channelId, name, intro, imageUrl, duration, seq, publishDate)
+                      values (%s, %s, %s, %s, %s, %s, from_unixtime(%s))
+       """, (cId, name, description, thumbnail, duration, i, timestamp))
+    eId = cursor.lastrowid
+    print "eId" + str(eId)
+    # write to nnprogram
+    cursor.execute("""
+       insert into nnprogram (channelId, episodeId, name, intro, imageUrl, duration, fileUrl, publishDate, contentType, isPublic, status)
+                     values (%s, %s, %s, %s, %s, %s, %s, from_unixtime(%s), 1, true, 0)
+       """, (cId, eId, name, description, thumbnail, duration, fileUrl, timestamp))
+    i = i + 1
+  else:
+     print "duplicate"
 
 # ch updateDate check
 cursor.execute("""
