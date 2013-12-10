@@ -112,6 +112,7 @@ for line in feed:
      print "duplicate"
 
 # ch updateDate check
+# for YouTube-channel follow newest video time, for YouTube-playlist follow playlist's update time
 cursor.execute("""
    select unix_timestamp(updateDate) from nnchannel
     where id = %s
@@ -124,7 +125,13 @@ if (ch_updateDate < long(timestamp)):
    cursor.execute("""
         update nnchannel set updateDate = from_unixtime(%s) 
          where id = %s             
-             """, (baseTimestamp, cId))  
+             """, (baseTimestamp, cId))
+
+# ch readonly set back when done all sync job
+cursor.execute("""
+        update nnchannel set readonly = false 
+         where id = %s             
+             """, (cId))
 
 dbcontent.commit()  
 cursor.close ()
