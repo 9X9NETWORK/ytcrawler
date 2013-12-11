@@ -1,6 +1,6 @@
 # ytcrawler #
 
-As a part of 9x9 back-end component, ytcrawler responses for YouTube data crawling.
+**ytcrawler** is part of 9x9 back-end components, crawling for YouTube data.<br>
 The [design document](https://docs.google.com/document/d/1_NM3ZrVxk3f-6A_yeX53G9xDRknxu1fw3wLjIuHKoeY/edit?usp=sharing) shows how it works.
 
 ## test ##
@@ -26,10 +26,8 @@ The [design document](https://docs.google.com/document/d/1_NM3ZrVxk3f-6A_yeX53G9
 3.  update config.php with db access info
 
 4.  api url
-
-    http://{yourwebhost}/ytcrawler/crawlerAPI.php
+    _http://{yourwebhost}/ytcrawler/crawlerAPI.php_
 
 5.  test
-
     similar to above test session
 
