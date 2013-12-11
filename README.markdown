@@ -5,9 +5,11 @@ The [design document](https://docs.google.com/document/d/1_NM3ZrVxk3f-6A_yeX53G9
 
 ## test ##
 
-    curl -d '{"id":29903,"sourceUrl":"http://www.youtube.com/user/ettvtaiwan1001","contentType":3,"isRealtime":1}' http://channelwatch.9x9.tv/ytcrawler/crawlerAPI.php
+```bash
+curl -d '{"id":29903,"sourceUrl":"http://www.youtube.com/user/ettvtaiwan1001","contentType":3,"isRealtime":1}' http://channelwatch.9x9.tv/ytcrawler/crawlerAPI.php
 
-    curl -d '{"id":29913,"sourceUrl":"http://www.youtube.com/view_play_list?p=bYMfMn1wPGWvDqTaKHh8k64M6ZJRtG6A","contentType":4,"isRealtime":1}' http://channelwatch.9x9.tv/ytcrawler/crawlerAPI.php
+curl -d '{"id":29913,"sourceUrl":"http://www.youtube.com/view_play_list?p=bYMfMn1wPGWvDqTaKHh8k64M6ZJRtG6A","contentType":4,"isRealtime":1}' http://channelwatch.9x9.tv/ytcrawler/crawlerAPI.php
+```
 
 ## Installation ##
 1.  prepare directories and ownership  
@@ -21,12 +23,12 @@ The [design document](https://docs.google.com/document/d/1_NM3ZrVxk3f-6A_yeX53G9
 2.  pull out source
 
         cd /var/www/
-        git clone git@bitbucket.org:9x9group/ytcrawler.git
+        git clone "git@bitbucket.org:9x9group/ytcrawler.git"
 
-3.  update *config.php* with db access info
+3.  update **config.php** with db access info
 
 4.  api url  
-    _http://{yourwebhost}/ytcrawler/crawlerAPI.php_
+    **http://{{yourwebhost}}/ytcrawler/crawlerAPI.php**
 
 5.  test  
     similar to above test session
