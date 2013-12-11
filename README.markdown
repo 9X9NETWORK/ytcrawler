@@ -25,9 +25,9 @@ The [design document](https://docs.google.com/document/d/1_NM3ZrVxk3f-6A_yeX53G9
 
 3.  update config.php with db access info
 
-4.  api url
+4.  api url  
     _http://{yourwebhost}/ytcrawler/crawlerAPI.php_
 
-5.  test
+5.  test  
     similar to above test session
 
