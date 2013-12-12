@@ -31,9 +31,9 @@ for line in config:
   elif key == '$dbpass':
     dbpass = value
 
-dbcontent = MySQLdb.connect (host = dbhost,
-                             user = dbuser,
-                             passwd = dbpass,
+dbcontent = MySQLdb.connect (host = 'localhost',
+                             user = 'root',
+                             passwd = '',
                              charset = "utf8",
                              use_unicode = True,
                              db = "nncloudtv_content")
@@ -55,9 +55,46 @@ response = open(fileName, 'r')
 feed = response.readlines()                  
 response.close()
 
+# read things to dic
+textDic = {}
+dbDic = {}
+for line in feed:
+  data = line.split('\t')
+  videoid = data[3]
+  fileUrl = "http://www.youtube.com/watch?v=" + videoid
+  textDic[fileUrl] = fileUrl
+
+cursor = dbcontent.cursor()
+cursor.execute("""
+   select id, episodeId, fileUrl from nnprogram where channelId = %s 
+      """, (cId))
+data = cursor.fetchall ()
+
+# remove unwanted
+print "-- compare existing --"
+for d in data:
+  # if not in text file, remove nnepisode related
+  pId = d[0]
+  eId = d[1]
+  fileUrl = d[2]
+  dbDic[fileUrl] = fileUrl
+  obj = textDic.get(fileUrl, 'empty')
+  if obj == 'empty':
+     print "delete nnepisode and its programs:(eId)" + str(eId)
+     cursor.execute("""delete from nnepisode where id = %s
+        """, (eId)) 
+     cursor.execute("""delete from nnprogram where episodeId  = %s
+        """, (eId))
+     cursor.execute("""delete from poi where pointId in (select id from poi_point where targetId = %s);
+        """, (pId))
+     cursor.execute("""delete from poi_point where targetId = %s
+        """, (pId))
+     
 # parsing episode
+print "-- parsing text --"
 i = 1           
 baseTimestamp = 0;                                
+i = 1
 for line in feed:
   data = line.split('\t')
   channelId = data[0] #supposedly the same as argument
@@ -80,37 +117,43 @@ for line in feed:
   print "duration:" + duration 
   print "thumbnail:" + thumbnail
   print "description:" + description
+  print "fileUrl:" + fileUrl
 
   if channelId != cId:
      print "Fatal: channelId not matching"
      sys.exit(0) 
 
   if timestamp > baseTimestamp:
-    baseTimestamp = timestamp 
-
+     baseTimestamp = timestamp 
+  
   cursor = dbcontent.cursor() 
-  # make sure no duplication, currently base on video id
   cursor.execute("""
-     select id from nnprogram where channelId = %s and fileUrl = %s 
+     select id, episodeId from nnprogram where channelId = %s and fileUrl = %s 
      """, (channelId, fileUrl))
-  count = cursor.rowcount
-  if count == 0:    
-    # write to nnepisode 
-    cursor.execute("""
-       insert into nnepisode (channelId, name, intro, imageUrl, duration, seq, publishDate)
-                      values (%s, %s, %s, %s, %s, %s, from_unixtime(%s))
-       """, (cId, name, description, thumbnail, duration, i, timestamp))
-    eId = cursor.lastrowid
-    print "eId" + str(eId)
-    # write to nnprogram
-    cursor.execute("""
-       insert into nnprogram (channelId, episodeId, name, intro, imageUrl, duration, fileUrl, publishDate, contentType, isPublic, status)
-                     values (%s, %s, %s, %s, %s, %s, %s, from_unixtime(%s), 1, true, 0)
-       """, (cId, eId, name, description, thumbnail, duration, fileUrl, timestamp))
-    i = i + 1
+  data = cursor.fetchone()
+  if data is None:    
+     # new entry from youtube, write to nnepisode
+     print "new entry, video:" + fileUrl 
+     cursor.execute("""
+        insert into nnepisode (channelId, name, intro, imageUrl, duration, seq, publishDate)
+                       values (%s, %s, %s, %s, %s, %s, from_unixtime(%s))
+        """, (cId, name, description, thumbnail, duration, i, timestamp))
+     eId = cursor.lastrowid
+     print "eId" + str(eId)
+     # write to nnprogram
+     cursor.execute("""
+        insert into nnprogram (channelId, episodeId, name, intro, imageUrl, duration, fileUrl, publishDate, contentType, isPublic, status)
+                      values (%s, %s, %s, %s, %s, %s, %s, from_unixtime(%s), 1, true, 0)
+        """, (cId, eId, name, description, thumbnail, duration, fileUrl, timestamp))
   else:
-     print "duplicate"
-
+     # existing data, update the db
+     eId = data[1]
+     cursor.execute("""
+        update nnepisode set seq = %s where id = %s
+        """, (i, eId))
+     print "duplicate, update seq"
+  i = i + 1
+   
 # ch updateDate check
 cursor.execute("""
    select unix_timestamp(updateDate) from nnchannel
@@ -118,6 +161,7 @@ cursor.execute("""
       """, (cId))
 ch_row = cursor.fetchone()
 ch_updateDate = ch_row[0]
+print "-- check update time --"
 print "original channel time: " + str(ch_updateDate) + "; time from youtube video:" + timestamp
 if (ch_updateDate < long(timestamp)):
    print "ch updateDate is older, update with yt video"
@@ -129,5 +173,5 @@ if (ch_updateDate < long(timestamp)):
 dbcontent.commit()  
 cursor.close ()
 
-print "record done:" + str(i)
+print "-- record done --" + str(i)
 
