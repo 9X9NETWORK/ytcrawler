@@ -27,36 +27,102 @@ class Crawler {
 
   public function get_yt_data() {
     if ($this->ytType  == 'channel') {
-      return $this->get_yt_channel($this->ytId);
+      return $this->get_yt_channel_all($this->ytId);
     } elseif ($this->ytType  == 'playlist') {
-      return $this->get_yt_playlist($this->ytId);
+      return $this->get_yt_playlist_all($this->ytId);
     } else {
       return null;
     }
   }
 
-  public function get_yt_channel($username=null) {
+  public function get_yt_channel($username=null, $start_index=1) {
     if ($username == null) {
       $username = $this->ytId;
     }
 
-    $ytAPI = 'http://gdata.youtube.com/feeds/api/users/' . $username . '/uploads?v=2&alt=jsonc&start-index=1&max-results=50&prettyprint=true';
+    $ytAPI = 'http://gdata.youtube.com/feeds/api/users/' . $username . '/uploads?v=2&alt=jsonc&max-results=50&prettyprint=true&start-index=' . $start_index;
     $this->ytData = file_get_contents($ytAPI);
     $this->headers = $http_response_header;
     $this->httpcode = $this->header_code($this->headers);
     return $this->ytData;
   }
 
-  public function get_yt_playlist($playlistId=null) {
+  public function get_yt_channel_all($username=null) {
+    if ($username == null) {
+      $username = $this->ytId;
+    }
+
+    $lines = array();
+    $start_index = 1;
+
+    do {
+      $ytData = $this->get_yt_channel($username, $start_index);
+      if ($this->httpcode != '200') {
+        print_r('FAILED - httpcode: ' . $this->httpcode . ' data: ' . print_r($ytData,true));
+        return $lines;
+      }
+
+      $d = json_decode($ytData);
+
+      if (!isset($d->data->items)) {
+        print_r("FAILED - No Video entry\n");
+        return $lines;
+      }
+
+      $totalItems = $d->data->totalItems;
+
+      $lines = array_merge($lines, $this->parse_items($d->data->items));
+
+      $start_index = $start_index + 50;
+      # limit 200 videos per channel
+    } while ($start_index < 201 and $totalItems >= $start_index);
+
+    return $lines;
+  }
+
+  public function get_yt_playlist($playlistId=null, $start_index=1) {
     if ($playlistId == null) {
       $playlistId = $this->ytId;
     }
 
-    $ytAPI = 'http://gdata.youtube.com/feeds/api/playlists/'. $playlistId . '?v=2&alt=jsonc&start-index=1&max-results=50&prettyprint=true';
+    $ytAPI = 'http://gdata.youtube.com/feeds/api/playlists/'. $playlistId . '?v=2&alt=jsonc&max-results=50&prettyprint=true&start-index=' . $start_index;
     $this->ytData = file_get_contents($ytAPI);
     $this->headers = $http_response_header;
     $this->httpcode = $this->header_code($this->headers);
     return $this->ytData;
+  }
+
+  public function get_yt_playlist_all($playlistId=null) {
+    if ($playlistId == null) {
+      $playlistId = $this->ytId;
+    }
+
+    $lines = array();
+    $start_index = 1;
+
+    do {
+      $ytData = $this->get_yt_playlist($playlistId, $start_index);
+      if ($this->httpcode != '200') {
+        print_r('FAILED - httpcode: ' . $this->httpcode . ' data: ' . print_r($ytData,true));
+        return $lines;
+      }
+
+      $d = json_decode($ytData);
+
+      if (!isset($d->data->items)) {
+        print_r("FAILED - No Video entry\n");
+        return $lines;
+      }
+
+      $totalItems = $d->data->totalItems;
+
+      $lines = array_merge($lines, $this->parse_items($d->data->items));
+      
+      $start_index = $start_index + 50;
+    } while ($totalItems >= $start_index);
+
+    return $lines;
+
   }
 
   public function parse_yt_url($url=null) {
@@ -109,9 +175,10 @@ class Crawler {
       # https://kb.teltel.com/kb/index.php/Filter_Invalid_Videos_in_YouTube_Channel_and_Playlist
       if (isset($i->accessControl) and 
             ($i->accessControl->embed == 'denied' or $i->accessControl->syndicate == 'denied') or
-            (isset($i->status) and !(isset($i->status->reason) and $i->status->reason == 'limitedSyndication'))
+            (isset($i->status) and isset($i->value) and !(isset($i->status->reason) and $i->status->reason == 'limitedSyndication'))
          ) {
         # video is unplayable
+        echo 'WARNING - Unplayable Video: ' . $i->id . ' in ytId: ' . $this->ytId . "\n";
         continue;
       }
 
