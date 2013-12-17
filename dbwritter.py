@@ -95,6 +95,7 @@ print "-- parsing text --"
 i = 1           
 baseTimestamp = 0;                                
 i = 1
+cntEpisode = 0
 for line in feed:
   data = line.split('\t')
   channelId = data[0] #supposedly the same as argument
@@ -153,6 +154,7 @@ for line in feed:
         """, (i, eId))
      print "duplicate, update seq"
   i = i + 1
+  cntEpisode = cntEpisode + 1
    
 # ch updateDate check
 # for YouTube-channel follow newest video time, for YouTube-playlist follow playlist's update time
@@ -172,10 +174,11 @@ if (ch_updateDate < long(timestamp)):
              """, (baseTimestamp, cId))
 
 # ch readonly set back when done all sync job
+# update ch cntEpisode
 cursor.execute("""
-        update nnchannel set readonly = false 
+        update nnchannel set readonly = false , cntEpisode = %s
          where id = %s             
-             """, (cId))
+             """, (cntEpisode, cId))
 
 dbcontent.commit()  
 cursor.close ()
