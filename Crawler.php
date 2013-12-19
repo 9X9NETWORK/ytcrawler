@@ -180,6 +180,13 @@ class Crawler {
         # video is unplayable
         echo 'WARNING - Unplayable Video: ' . $i->id . ' in ytId: ' . $this->ytId . "\n";
         continue;
+      } else if (isset($i->status) and isset($i->status->value) and 
+      		(!(isset($i->status->reason)) or $i->status->reason != 'limitedSyndication')
+         ) {
+      	# video is unplayable
+      	# test url http://gdata.youtube.com/feeds/api/playlists/PL1439A6A6F1D266D3?v=2&alt=jsonc&max-results=50&prettyprint=true&start-index=1
+      	echo 'WARNING - Unplayable Video: ' . $i->id . ' in ytId: ' . $this->ytId . "\n";
+      	continue;
       }
 
       $data = array(
