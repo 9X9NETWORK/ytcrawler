@@ -9,7 +9,7 @@ Prerequisite
 
 * Ubuntu 12.04
 
-      sudo apt-get install python-pycurl
+        sudo apt-get install python-pycurl
 
 Test
 ----
