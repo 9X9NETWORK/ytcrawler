@@ -7,9 +7,11 @@ The [design document](https://docs.google.com/document/d/1_NM3ZrVxk3f-6A_yeX53G9
 Prerequisite
 ------------
 
-* Ubuntu 12.04
+Ubuntu 12.04
 
-        sudo apt-get install python-pycurl
+````bash
+sudo apt-get install python-pycurl
+````
 
 Test
 ----
