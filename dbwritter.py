@@ -6,6 +6,7 @@ import os
 from array import *
 import MySQLdb
 import time, datetime
+import pycurl
 
 dbhost = 'localhost'
 dbuser = 'root'
@@ -96,6 +97,7 @@ i = 1
 baseTimestamp = 0;                                
 i = 1
 cntEpisode = 0
+eIds = []
 for line in feed:
   data = line.split('\t')
   channelId = data[0] #supposedly the same as argument
@@ -140,6 +142,7 @@ for line in feed:
                        values (%s, %s, %s, %s, %s, %s, from_unixtime(%s))
         """, (cId, name, description, thumbnail, duration, i, timestamp))
      eId = cursor.lastrowid
+     eIds.append(eId)
      print "eId" + str(eId)
      # write to nnprogram
      cursor.execute("""
@@ -185,3 +188,28 @@ cursor.close ()
 
 print "-- record done --" + str(i)
 
+class GetPage:
+    def __init__ (self, url):
+        self.contents = ''
+        self.url = url
+
+    def read_page (self, buf):
+        self.contents = self.contents + buf
+
+    def show_page (self):
+        print self.contents
+
+autoshareCurl = pycurl.Curl()
+nnApiDomain = "localhost:8080"
+for eId in eIds:
+   resultPage = GetPage("http://" + nnApiDomain + "/api/episodes/" + str(eId) + "/scheduledAutosharing/facebook")
+   autoshareCurl.setopt(autoshareCurl.URL, resultPage.url)
+   autoshareCurl.setopt(autoshareCurl.WRITEFUNCTION, resultPage.read_page)
+   autoshareCurl.perform()
+   print "autosharing episode ID : " + str(eId)
+   resultPage.show_page()
+autoshareCurl.close()
+
+
+
+        
