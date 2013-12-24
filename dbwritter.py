@@ -7,6 +7,7 @@ from array import *
 import MySQLdb
 import time, datetime
 import pycurl
+import json
 
 dbhost = 'localhost'
 dbuser = 'root'
@@ -188,7 +189,11 @@ cursor.close ()
 
 print "-- record done --" + str(i)
 
-nnApiDomain = "localhost:8080"
+json_data = open('serverConfig.json')
+data = json.load(json_data)
+nnApiDomain = data.get("nnApiDomain", "localhost:8080") # dict's function
+
+print "-- nnApiDomain --" + nnApiDomain
 
 url = "http://" + nnApiDomain + "/wd/programCache?channel=" + str(cId)
 urllib2.urlopen(url).read()
