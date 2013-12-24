@@ -188,6 +188,11 @@ cursor.close ()
 
 print "-- record done --" + str(i)
 
+nnApiDomain = "localhost:8080"
+
+url = "http://" + nnApiDomain + "/wd/programCache?channel=" + str(cId)
+urllib2.urlopen(url).read()
+
 class GetPage:
     def __init__ (self, url):
         self.contents = ''
@@ -200,7 +205,6 @@ class GetPage:
         print self.contents
 
 autoshareCurl = pycurl.Curl()
-nnApiDomain = "localhost:8080"
 for eId in eIds:
    resultPage = GetPage("http://" + nnApiDomain + "/api/episodes/" + str(eId) + "/scheduledAutosharing/facebook")
    autoshareCurl.setopt(autoshareCurl.URL, resultPage.url)
