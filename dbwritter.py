@@ -138,8 +138,8 @@ for line in feed:
      # new entry from youtube, write to nnepisode
      print "new entry, video:" + fileUrl 
      cursor.execute("""
-        insert into nnepisode (channelId, name, intro, imageUrl, duration, seq, publishDate)
-                       values (%s, %s, %s, %s, %s, %s, from_unixtime(%s))
+        insert into nnepisode (channelId, name, intro, imageUrl, duration, seq, publishDate, isPublic)
+                       values (%s, %s, %s, %s, %s, %s, from_unixtime(%s), true)
         """, (cId, name, description, thumbnail, duration, i, timestamp))
      eId = cursor.lastrowid
      eIds.append(eId)
