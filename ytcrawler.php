@@ -23,6 +23,7 @@ if (!isset($decoded->id)) {
 }
 
 $outFile = '/var/tmp/ytcrawl/ponderosa.feed.' . $decoded->id . '.txt';
+$metaFile = '/var/tmp/ytcrawl/ponderosa.meta.' . $decoded->id . '.json';
 
 $crl = new Crawler($decoded->id, $decoded->sourceUrl);
 if ($crl->ytId == '') {
@@ -38,6 +39,10 @@ if ($lines == array()) {
 }
 
 file_put_contents($outFile, implode("\n", $lines));
+
+$meta = $crl->get_yt_meta();
+
+file_put_contents($metaFile, json_encode($meta));
 
 echo 'end crawling - ' . date("Y-m-d H:i:s\n");
 #run dbwriter.py in background

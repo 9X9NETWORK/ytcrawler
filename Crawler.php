@@ -25,6 +25,25 @@ class Crawler {
     return $this->ytId;
   }
 
+  public function get_yt_meta() {
+    $meta = Array('title'=>'', 'description'=>'', 'thumbnail'=>'');
+    if ($this->ytType == 'channel') {
+        $ytAPI = 'http://gdata.youtube.com/feeds/api/users/' . $this->ytId . '?v=2&alt=json&prettyprint=true';
+        $data = json_decode(file_get_contents($ytAPI), true);
+        $meta['title'] = $data['entry']['title']['$t'];
+        $meta['description'] = $data['entry']['summary']['$t'];
+        $meta['thumbnail'] = $data['entry']['media$thumbnail']['url'];
+    } else if ($this->ytType == 'playlist') {
+        $ytAPI = 'http://gdata.youtube.com/feeds/api/playlists/' . $this->ytId . '?v=2&alt=jsonc&prettyprint=true&max-results=1';
+        $data = json_decode(file_get_contents($ytAPI))->data;
+        $meta['title'] = $data->title;
+        $meta['description'] = $data->description;
+        $meta['thumbnail'] = $data->thumbnail->hqDefault;
+    }
+    echo $ytAPI . "\n";
+    return $meta;
+  }
+
   public function get_yt_data() {
     if ($this->ytType  == 'channel') {
       return $this->get_yt_channel_all($this->ytId);
