@@ -6,6 +6,7 @@ import os
 from array import *
 import MySQLdb
 import time, datetime
+import json
 
 apiserver = 'localhost:8080'
 dbhost = 'localhost'
@@ -57,6 +58,15 @@ fileName = '/var/tmp/ytcrawl/ponderosa.feed.' + cId + '.txt'
 response = open(fileName, 'r')
 feed = response.readlines()                  
 response.close()
+
+fileName = '/var/tmp/ytcrawl/ponderosa.meta.' + cId + '.json'
+response = open(fileName, 'r')
+meta = json.load(response)
+response.close()
+
+chTitle = meta['title'];
+chDescription = meta['description'];
+chThumbnail = meta['thumbnail'];
 
 # read things to dic
 textDic = {}
@@ -186,9 +196,10 @@ if (ch_updateDate < long(timestamp)):
 # ch readonly set back when done all sync job
 # update ch cntEpisode
 cursor.execute("""
-        update nnchannel set readonly = false , cntEpisode = %s
+        update nnchannel set readonly = false , cntEpisode = %s ,
+                             name = %s , intro = %s , imageUrl = %s
          where id = %s             
-             """, (cntEpisode, cId))
+             """, (cntEpisode, chTitle, chDescription, chThumbnail, cId))
 
 dbcontent.commit()  
 cursor.close ()
