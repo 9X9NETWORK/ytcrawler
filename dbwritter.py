@@ -114,6 +114,7 @@ for line in feed:
   description = description[:253] + (description[253:] and '..')
   fileUrl = "http://www.youtube.com/watch?v=" + videoid
   # debug output
+  print "--------------------------------"
   print "cid:" + channelId
   print "username:" + username
   print "crawdate:" + crawldate
