@@ -130,6 +130,10 @@ for line in feed:
 
   if timestamp > baseTimestamp:
      baseTimestamp = timestamp 
+  if timestamp == "0":
+     # workaround
+     print "timestamp is zero (maybe a private video)"
+     timestamp = "1"
   
   cursor = dbcontent.cursor() 
   cursor.execute("""
