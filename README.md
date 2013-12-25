@@ -4,15 +4,6 @@ ytcrawler
 **ytcrawler** is part of 9x9 back-end components, crawling for YouTube data.  
 The [design document](https://docs.google.com/document/d/1_NM3ZrVxk3f-6A_yeX53G9xDRknxu1fw3wLjIuHKoeY/edit?usp=sharing) shows how it works.
 
-Prerequisite
-------------
-
-Ubuntu 12.04
-
-````bash
-sudo apt-get install python-pycurl
-````
-
 Test
 ----
 
