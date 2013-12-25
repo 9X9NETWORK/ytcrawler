@@ -7,8 +7,8 @@ from array import *
 import MySQLdb
 import time, datetime
 import pycurl
-import json
 
+apiserver = 'localhost:8080'
 dbhost = 'localhost'
 dbuser = 'root'
 dbpass = ''
@@ -32,6 +32,8 @@ for line in config:
     dbuser = value
   elif key == '$dbpass':
     dbpass = value
+  elif key == '$apiserver':
+    apiserver = value
 
 dbcontent = MySQLdb.connect (host = 'localhost',
                              user = 'root',
@@ -189,13 +191,9 @@ cursor.close ()
 
 print "-- record done --" + str(i)
 
-json_data = open('serverConfig.json')
-data = json.load(json_data)
-nnApiDomain = data.get("nnApiDomain", "localhost:8080") # dict's function
+print "-- call api --" + apiserver
 
-print "-- nnApiDomain --" + nnApiDomain
-
-url = "http://" + nnApiDomain + "/wd/programCache?channel=" + str(cId)
+url = "http://" + apiserver + "/wd/programCache?channel=" + str(cId)
 urllib2.urlopen(url).read()
 
 class GetPage:
@@ -219,6 +217,3 @@ for eId in eIds:
    resultPage.show_page()
 autoshareCurl.close()
 
-
-
-        
