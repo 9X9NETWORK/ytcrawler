@@ -6,7 +6,6 @@ import os
 from array import *
 import MySQLdb
 import time, datetime
-import pycurl
 
 apiserver = 'localhost:8080'
 dbhost = 'localhost'
@@ -196,24 +195,8 @@ print "-- call api --" + apiserver
 url = "http://" + apiserver + "/wd/programCache?channel=" + str(cId)
 urllib2.urlopen(url).read()
 
-class GetPage:
-    def __init__ (self, url):
-        self.contents = ''
-        self.url = url
-
-    def read_page (self, buf):
-        self.contents = self.contents + buf
-
-    def show_page (self):
-        print self.contents
-
-autoshareCurl = pycurl.Curl()
 for eId in eIds:
-   resultPage = GetPage("http://" + nnApiDomain + "/api/episodes/" + str(eId) + "/scheduledAutosharing/facebook")
-   autoshareCurl.setopt(autoshareCurl.URL, resultPage.url)
-   autoshareCurl.setopt(autoshareCurl.WRITEFUNCTION, resultPage.read_page)
-   autoshareCurl.perform()
+   url = "http://" + apiserver + "/api/episodes/" + str(eId) + "/scheduledAutosharing/facebook"
+   urllib2.urlopen(url).read()
    print "autosharing episode ID : " + str(eId)
-   resultPage.show_page()
-autoshareCurl.close()
 
