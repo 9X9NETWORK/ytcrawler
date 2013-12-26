@@ -67,8 +67,6 @@ response.close()
 chTitle = meta['title'];
 chDescription = meta['description'];
 chThumbnail = meta['thumbnail'];
-chTitle = chTitle[:498] + (chTitle[498:] and '..')
-chDescription = chDescription[:498] + (chDescription[498:] and '..')
 
 # read things to dic
 textDic = {}
@@ -197,6 +195,12 @@ if (ch_updateDate < long(timestamp)):
 
 # ch readonly set back when done all sync job
 # update ch cntEpisode
+
+chTitle = chTitle.encode('utf8')
+chTitle = chTitle[:498] + (chTitle[498:] and '..')
+chDescription = chDescription.encode('utf8')
+chDescription = chDescription[:498] + (chDescription[498:] and '..')
+
 cursor.execute("""
         update nnchannel set readonly = false , cntEpisode = %s ,
                              name = %s , intro = %s , imageUrl = %s
