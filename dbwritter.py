@@ -67,6 +67,8 @@ response.close()
 chTitle = meta['title'];
 chDescription = meta['description'];
 chThumbnail = meta['thumbnail'];
+chTitle = chTitle[:498] + (chTitle[498:] and '..')
+chDescription = chDescription[:498] + (chDescription[498:] and '..')
 
 # read things to dic
 textDic = {}
