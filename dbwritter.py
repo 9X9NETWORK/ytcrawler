@@ -185,9 +185,8 @@ cursor.execute("""
 ch_row = cursor.fetchone()
 ch_updateDate = ch_row[0]
 print "-- check update time --"
-print "original channel time: " + str(ch_updateDate) + "; time from youtube video:" + timestamp
-if (ch_updateDate < long(timestamp)):
-   print "ch updateDate is older, update with yt video"
+print "original channel time: " + str(ch_updateDate) + "; time from youtube video:" + baseTimestamp
+if (baseTimestamp != 0):
    cursor.execute("""
         update nnchannel set updateDate = from_unixtime(%s) 
          where id = %s             
