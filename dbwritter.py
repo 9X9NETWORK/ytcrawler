@@ -67,6 +67,7 @@ response.close()
 chTitle = meta['title'];
 chDescription = meta['description'];
 chThumbnail = meta['thumbnail'];
+chUpdateDate = meta['updateDate'];
 
 # read things to dic
 textDic = {}
@@ -186,6 +187,8 @@ ch_row = cursor.fetchone()
 ch_updateDate = ch_row[0]
 print "-- check update time --"
 print "original channel time: " + str(ch_updateDate) + "; time from youtube video:" + baseTimestamp
+if (chUpdateDate != ''): # YouTube-playlist follow playlist's update time
+  baseTimestamp = chUpdateDate
 if (baseTimestamp != 0):
    cursor.execute("""
         update nnchannel set updateDate = from_unixtime(%s) 
