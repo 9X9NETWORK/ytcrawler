@@ -35,9 +35,9 @@ for line in config:
   elif key == '$apiserver':
     apiserver = value
 
-dbcontent = MySQLdb.connect (host = 'localhost',
-                             user = 'root',
-                             passwd = '',
+dbcontent = MySQLdb.connect (host = dbhost,
+                             user = dbuser,
+                             passwd = dbpass,
                              charset = "utf8",
                              use_unicode = True,
                              db = "nncloudtv_content")
@@ -184,16 +184,17 @@ cursor.execute("""
     where id = %s
       """, (cId))
 ch_row = cursor.fetchone()
-ch_updateDate = ch_row[0]
-print "-- check update time --"
-print "original channel time: " + str(ch_updateDate) + "; time from youtube video:" + baseTimestamp
-if (chUpdateDate != ''): # YouTube-playlist follow playlist's update time
-  baseTimestamp = chUpdateDate
-if (baseTimestamp != 0):
-   cursor.execute("""
-        update nnchannel set updateDate = from_unixtime(%s) 
-         where id = %s             
-             """, (baseTimestamp, cId))
+if ch_row is not None:
+    ch_updateDate = ch_row[0]
+    print "-- check update time --"
+    print "original channel time: " + str(ch_updateDate) + "; time from youtube video:" + baseTimestamp
+    if (chUpdateDate != ''): # YouTube-playlist follow playlist's update time
+       baseTimestamp = chUpdateDate
+    if (baseTimestamp != 0):
+       cursor.execute("""
+            update nnchannel set updateDate = from_unixtime(%s) 
+             where id = %s             
+                 """, (baseTimestamp, cId))
 
 # ch readonly set back when done all sync job
 # update ch cntEpisode
