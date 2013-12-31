@@ -37,6 +37,7 @@ echo
 for ch in $chlist; do
     echo "--------------------"
     /usr/bin/php "$ytcrawler_dir/ytcrawler.php" $ch
+    sleep 1
 done
 
 echo
