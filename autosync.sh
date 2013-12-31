@@ -2,7 +2,7 @@
 #
 # autosync.sh
 #
-# to put this script in crontab to do youtube sync job automatically
+# to put this script in crontab to do youtube sync job periodically
 #
 #   ex. (sync 3 times a day)
 #
