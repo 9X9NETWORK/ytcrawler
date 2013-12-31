@@ -43,8 +43,8 @@ Installation
 autosync
 --------------------
 
-put this line in **crontab**
+put this line in **crontab** to do youtube sync job periodically
 
-    :::crontab
+    :::cron
     * */8 * * * sudo su www-data -c "/var/www/ytcrawler/autosync.sh >> /var/tmp/ytcrawl/autosync.log"
 
