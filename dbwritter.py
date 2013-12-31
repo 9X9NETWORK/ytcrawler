@@ -206,9 +206,10 @@ chDescription = chDescription[:498] + (chDescription[498:] and '..')
 
 cursor.execute("""
         update nnchannel set readonly = false , cntEpisode = %s ,
-                             name = %s , intro = %s , imageUrl = %s
+                             name = %s , intro = %s , imageUrl = %s,
+                             transcodingUpdateDate = %s
          where id = %s             
-             """, (cntEpisode, chTitle, chDescription, chThumbnail, cId))
+             """, (cntEpisode, chTitle, chDescription, chThumbnail, int(time.time()), cId))
 
 dbcontent.commit()  
 cursor.close ()
