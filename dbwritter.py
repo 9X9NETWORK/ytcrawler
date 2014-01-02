@@ -204,6 +204,7 @@ chTitle = chTitle[:498] + (chTitle[498:] and '..')
 chDescription = chDescription.encode('utf8')
 chDescription = chDescription[:498] + (chDescription[498:] and '..')
 
+# transcodingUpdateDate stores the timestamp of synchronization time
 cursor.execute("""
         update nnchannel set readonly = false , cntEpisode = %s ,
                              name = %s , intro = %s , imageUrl = %s,
