@@ -46,5 +46,5 @@ autosync
 put this line in **crontab** to do youtube sync job periodically
 
     :::cron
-    * */8 * * * sudo su www-data -c "/var/www/ytcrawler/autosync.sh >> /var/tmp/ytcrawl/autosync.log"
+    * */6 * * * sudo su www-data -c "/var/www/ytcrawler/autosync.sh >> /var/tmp/ytcrawl/autosync.log"
 
