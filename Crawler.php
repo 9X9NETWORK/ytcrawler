@@ -37,15 +37,43 @@ class Crawler {
         $ytAPI = 'http://gdata.youtube.com/feeds/api/playlists/' . $this->ytId . '?v=2&alt=json&prettyprint=true&max-results=1';
         $data = json_decode(file_get_contents($ytAPI), true);
         $meta['title'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['feed']['title']['$t']));
-        $thumbnailCount = count($data['feed']['media$group']['media$thumbnail']);
-        if ($thumbnailCount > 0) {
-            $meta['thumbnail'] = $data['feed']['media$group']['media$thumbnail'][$thumbnailCount-1]['url'];
-        }
+        $meta['thumbnail'] = $this->get_yt_playlist_thumbnail($data['feed']['media$group']['media$thumbnail']);
         $meta['description'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['feed']['subtitle']['$t']));
         $meta['updateDate'] = strtotime($data['feed']['updated']['$t']);
     }
     echo $ytAPI . "\n";
     return $meta;
+  }
+  
+  public function get_yt_playlist_thumbnail($thumbnails) {
+  	
+    $default = null;
+    $mqdefault = null;
+    $hqdefault = null;
+    $sddefault = null;
+    
+    foreach ($thumbnails as $thumbnail) {
+        if ($thumbnail['height'] == 90 && $thumbnail['width'] == 120)
+            $default = $thumbnail['url'];
+        if ($thumbnail['height'] == 180 && $thumbnail['width'] == 320)
+            $mqdefault = $thumbnail['url'];
+        if ($thumbnail['height'] == 360 && $thumbnail['width'] == 480)
+            $hqdefault = $thumbnail['url'];
+        if ($thumbnail['height'] == 480 && $thumbnail['width'] == 640)
+            $sddefault = $thumbnail['url'];
+    }
+    
+    if ($mqdefault != null)
+        return $mqdefault;
+    else if ($hqdefault != null)
+        return $hqdefault;
+    else if ($sddefault != null)
+        return $sddefault;
+    else if ($default != null)
+        return $default;
+    else {
+        return "";
+    }
   }
 
   public function get_yt_data() {
