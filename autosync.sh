@@ -6,7 +6,7 @@
 #
 #   ex. (sync 4 times a day)
 #
-#   * */6 * * * sudo su www-data -c "/var/www/ytcrawler/autosync.sh >> /var/tmp/ytcrawl/autosync.log"
+#   0 1,6,12 * * * sudo su www-data -c "/var/www/ytcrawler/autosync.sh >> /var/tmp/ytcrawl/autosync.log"
 #
 
 ytcrawler_dir=$(dirname "$(readlink -f "$0")")
