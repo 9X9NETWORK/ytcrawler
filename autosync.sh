@@ -4,9 +4,9 @@
 #
 # to put this script in crontab to do youtube sync job periodically
 #
-#   ex. (sync 3 times a day)
+#   ex. (sync 4 times a day)
 #
-#   * */8 * * * sudo su www-data -c "/var/www/ytcrawler/autosync.sh >> /var/tmp/ytcrawl/autosync.log"
+#   0 1,6,12 * * * sudo su www-data -c "/var/www/ytcrawler/autosync.sh >> /var/tmp/ytcrawl/autosync.log"
 #
 
 ytcrawler_dir=$(dirname "$(readlink -f "$0")")

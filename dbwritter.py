@@ -181,12 +181,21 @@ for line in feed:
 # ch updateDate check
 # for YouTube-channel follow newest video time, for YouTube-playlist follow playlist's update time
 cursor.execute("""
-   select unix_timestamp(updateDate) from nnchannel
+   select unix_timestamp(updateDate), imageUrl from nnchannel
     where id = %s
       """, (cId))
+chOriginThumbnail = ""
 ch_row = cursor.fetchone()
 if ch_row is not None:
     ch_updateDate = ch_row[0]
+    chOriginThumbnail = ch_row[1]
+    #hold the latest episode thumbnails, format is "ch thumbnail|ep1 thumbnail|ep2 thumbnail|ep3 thumbnail"
+    if chOriginThumbnail is not None:
+      start = chOriginThumbnail.find("|");
+      if start > 0:
+         chOriginThumbnail = chOriginThumbnail[start:]
+    else:
+       chOriginThumbnail = ""
     print "-- check update time --"
     print "original channel time: " + str(ch_updateDate) + "; time from youtube video:" + baseTimestamp
     if (chUpdateDate != ''): # YouTube-playlist follow playlist's update time
@@ -209,7 +218,10 @@ chTitle = chTitle.encode('utf8')
 chTitle = chTitle[:498] + (chTitle[498:] and '..')
 chDescription = chDescription.encode('utf8')
 chDescription = chDescription[:498] + (chDescription[498:] and '..')
-
+if chOriginThumbnail.find("|") < 0:
+   chThumbnail = chThumbnail
+else:
+   chThumbnail = chThumbnail + chOriginThumbnail       
 # transcodingUpdateDate stores the timestamp of synchronization time
 cursor.execute("""
         update nnchannel set readonly = false , cntEpisode = %s ,
