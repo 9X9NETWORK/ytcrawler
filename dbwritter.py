@@ -64,10 +64,11 @@ response = open(fileName, 'r')
 meta = json.load(response)
 response.close()
 
-chTitle = meta['title'];
-chDescription = meta['description'];
-chThumbnail = meta['thumbnail'];
-chUpdateDate = meta['updateDate'];
+chTitle = meta['title']
+chDescription = meta['description']
+chThumbnail = meta['thumbnail']
+chUpdateDate = meta['updateDate']
+chError = meta['error']
 
 # read things to dic
 textDic = {}
@@ -195,6 +196,11 @@ if ch_row is not None:
             update nnchannel set updateDate = from_unixtime(%s) 
              where id = %s             
                  """, (baseTimestamp, cId))
+    if (chError is not None):
+        cursor.execute("""
+                       update nnchannel_pref set value = 'failed'
+                       where id = %s and item = 'auto-sync'
+                       """, (cId))
 
 # ch readonly set back when done all sync job
 # update ch cntEpisode

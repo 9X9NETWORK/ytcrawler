@@ -30,19 +30,29 @@ class Crawler {
     if ($this->ytType == 'channel') {
         $ytAPI = 'http://gdata.youtube.com/feeds/api/users/' . $this->ytId . '?v=2&alt=json&prettyprint=true';
         $data = json_decode(file_get_contents($ytAPI), true);
-        $meta['title'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['entry']['title']['$t']));
-        $meta['thumbnail'] = $data['entry']['media$thumbnail']['url'];
-        $meta['description'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['entry']['summary']['$t']));
+        if ($data == null || !isset($data['entry'])) {
+            echo "Invalid youtube channel!";
+            $meta['error'] = true;
+        } else {
+            $meta['title'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['entry']['title']['$t']));
+            $meta['thumbnail'] = $data['entry']['media$thumbnail']['url'];
+            $meta['description'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['entry']['summary']['$t']));
+        }
     } else if ($this->ytType == 'playlist') {
         $ytAPI = 'http://gdata.youtube.com/feeds/api/playlists/' . $this->ytId . '?v=2&alt=json&prettyprint=true&max-results=1';
         $data = json_decode(file_get_contents($ytAPI), true);
-        $meta['title'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['feed']['title']['$t']));
-        $thumbnailCount = count($data['feed']['media$group']['media$thumbnail']);
-        if ($thumbnailCount > 0) {
-            $meta['thumbnail'] = $data['feed']['media$group']['media$thumbnail'][$thumbnailCount-1]['url'];
+        if ($data == null || !isset($data['feed'])) {
+            echo "Invalid playlist!";
+            $meta['error'] = true;
+        } else {
+            $meta['title'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['feed']['title']['$t']));
+            $thumbnailCount = count($data['feed']['media$group']['media$thumbnail']);
+            if ($thumbnailCount > 0) {
+                $meta['thumbnail'] = $data['feed']['media$group']['media$thumbnail'][$thumbnailCount-1]['url'];
+            }
+            $meta['description'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['feed']['subtitle']['$t']));
+            $meta['updateDate'] = strtotime($data['feed']['updated']['$t']);
         }
-        $meta['description'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['feed']['subtitle']['$t']));
-        $meta['updateDate'] = strtotime($data['feed']['updated']['$t']);
     }
     echo $ytAPI . "\n";
     return $meta;
