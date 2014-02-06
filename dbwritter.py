@@ -68,7 +68,10 @@ chTitle = meta['title']
 chDescription = meta['description']
 chThumbnail = meta['thumbnail']
 chUpdateDate = meta['updateDate']
-chError = meta['error']
+if 'error' in meta:
+    chError = meta['error']
+else:
+    chError = None
 
 # read things to dic
 textDic = {}
