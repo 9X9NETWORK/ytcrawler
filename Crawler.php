@@ -63,14 +63,14 @@ class Crawler {
             $sddefault = $thumbnail['url'];
     }
     
-    if ($mqdefault != null)
+    if ($default != null)
+        return $default;
+    else if ($mqdefault != null)
         return $mqdefault;
     else if ($hqdefault != null)
         return $hqdefault;
     else if ($sddefault != null)
         return $sddefault;
-    else if ($default != null)
-        return $default;
     else {
         return "";
     }
