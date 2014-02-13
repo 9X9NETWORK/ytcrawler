@@ -35,7 +35,7 @@ echo 'ytcrawl for ' . $crl->ytId . "\n";
 $lines = $crl->get_yt_data();
 
 if ($lines == array()) {
-  die('FAILED - No Playable Video');
+  print('FAILED - No Playable Video');
 }
 
 file_put_contents($outFile, implode("\n", $lines));
