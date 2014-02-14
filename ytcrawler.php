@@ -1,7 +1,7 @@
 <?php
 include 'Crawler.php';
 
-echo 'start crawling - ' . date("Y-m-d H:i:s\n");
+echo 'start crawling - ' . date("Y-m-d H:i:s\n") . ' (ch' . $argv[1] . ')';
 
 if (!isset($argv[1])) {
   die('FAILED - Require nnChannelId in input!!!');

@@ -78,6 +78,12 @@ if (chError is not None):
     cursor.close ()
     print "Warning: invalid playlist! (" + str(cId) + ")"
     sys.exit(0) 
+else:
+    # bring it back to live
+    cursor.execute("""
+                   update nnchannel_pref set value = 'off'
+                   where channelId = %s and item = 'auto-sync' and value = 'failed'
+                   """, (cId))
 
 # ch updateDate check
 # for YouTube-channel follow newest video time, for YouTube-playlist follow playlist's update time
