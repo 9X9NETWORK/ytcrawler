@@ -81,6 +81,7 @@ if (chError is not None):
 
 # ch updateDate check
 # for YouTube-channel follow newest video time, for YouTube-playlist follow playlist's update time
+baseTimestamp = 0;                                
 cursor.execute("""
    select unix_timestamp(updateDate), imageUrl from nnchannel
     where id = %s
@@ -146,8 +147,6 @@ for d in data:
      
 # parsing episode
 print "-- parsing text --"
-i = 1           
-baseTimestamp = 0;                                
 i = 1
 cntEpisode = 0
 eIds = []
