@@ -45,15 +45,6 @@ dbcontent = MySQLdb.connect (host = dbhost,
 # get channel id
 cId = sys.argv[1]
 
-# read corresponding filei !!! file name might need to be changed
-#url = 'http://channelwatch.9x9.tv/dan/ponderosa.feed.' + cId + 'txt'
-#url = 'http://localhost:8080/images/test.txt'  #!!! testing file
-#user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
-#values = {'language' : 'Python' }
-#headers = { 'User-Agent' : user_agent }
-#data = urllib.urlencode(values)            
-#req = urllib2.Request(url, data, headers)
-#response = urllib2.urlopen(req)
 fileName = '/var/tmp/ytcrawl/ponderosa.feed.' + cId + '.txt'
 response = open(fileName, 'r')
 feed = response.readlines()                  
@@ -64,10 +55,67 @@ response = open(fileName, 'r')
 meta = json.load(response)
 response.close()
 
-chTitle = meta['title'];
-chDescription = meta['description'];
-chThumbnail = meta['thumbnail'];
-chUpdateDate = meta['updateDate'];
+cursor = dbcontent.cursor()
+
+chTitle = meta['title']
+chDescription = meta['description']
+chThumbnail = meta['thumbnail']
+chUpdateDate = meta['updateDate']
+if 'error' in meta:
+    chError = meta['error']
+else:
+    chError = None
+
+if (chError is not None):
+    cursor.execute("""
+                   update nnchannel_pref set value = 'failed'
+                   where channelId = %s and item = 'auto-sync'
+                   """, (cId))
+    cursor.execute("""
+                   update nnchannel set readonly = false where id = %s
+                   """, (cId))
+    dbcontent.commit()  
+    cursor.close ()
+    print "Warning: invalid playlist! (" + str(cId) + ")"
+    sys.exit(0) 
+else:
+    # bring it back to live
+    cursor.execute("""
+                   update nnchannel_pref set value = 'off'
+                   where channelId = %s and item = 'auto-sync' and value = 'failed'
+                   """, (cId))
+
+# ch updateDate check
+# for YouTube-channel follow newest video time, for YouTube-playlist follow playlist's update time
+baseTimestamp = 0;                                
+cursor.execute("""
+   select unix_timestamp(updateDate), imageUrl from nnchannel
+    where id = %s
+      """, (cId))
+chOriginThumbnail = ""
+ch_row = cursor.fetchone()
+if ch_row is not None:
+    ch_updateDate = ch_row[0]
+    chOriginThumbnail = ch_row[1]
+    #hold the latest episode thumbnails, format is "ch thumbnail|ep1 thumbnail|ep2 thumbnail|ep3 thumbnail"
+    if chOriginThumbnail is not None:
+      start = chOriginThumbnail.find("|");
+      if start > 0:
+         chOriginThumbnail = chOriginThumbnail[start:]
+    else:
+       chOriginThumbnail = ""
+    print "-- check update time --"
+    print "original channel time: " + str(ch_updateDate) + "; time from youtube video:" + str(baseTimestamp)
+    if (chUpdateDate != ''): # YouTube-playlist follow playlist's update time
+       baseTimestamp = chUpdateDate
+    if (baseTimestamp != 0):
+       cursor.execute("""
+            update nnchannel set updateDate = from_unixtime(%s) 
+             where id = %s             
+                 """, (baseTimestamp, cId))
+else:
+    print "Fatal: invalid channelId"
+    sys.exit(0) 
 
 # read things to dic
 textDic = {}
@@ -78,7 +126,6 @@ for line in feed:
   fileUrl = "http://www.youtube.com/watch?v=" + videoid
   textDic[fileUrl] = fileUrl
 
-cursor = dbcontent.cursor()
 cursor.execute("""
    select id, episodeId, fileUrl from nnprogram where channelId = %s 
       """, (cId))
@@ -106,8 +153,6 @@ for d in data:
      
 # parsing episode
 print "-- parsing text --"
-i = 1           
-baseTimestamp = 0;                                
 i = 1
 cntEpisode = 0
 eIds = []
@@ -177,34 +222,6 @@ for line in feed:
   i = i + 1
   cntEpisode = cntEpisode + 1
    
-# ch updateDate check
-# for YouTube-channel follow newest video time, for YouTube-playlist follow playlist's update time
-cursor.execute("""
-   select unix_timestamp(updateDate), imageUrl from nnchannel
-    where id = %s
-      """, (cId))
-chOriginThumbnail = ""
-ch_row = cursor.fetchone()
-if ch_row is not None:
-    ch_updateDate = ch_row[0]
-    chOriginThumbnail = ch_row[1]
-    #hold the latest episode thumbnails, format is "ch thumbnail|ep1 thumbnail|ep2 thumbnail|ep3 thumbnail"
-    if chOriginThumbnail is not None:
-      start = chOriginThumbnail.find("|");
-      if start > 0:
-         chOriginThumbnail = chOriginThumbnail[start:]
-    else:
-       chOriginThumbnail = ""
-    print "-- check update time --"
-    print "original channel time: " + str(ch_updateDate) + "; time from youtube video:" + baseTimestamp
-    if (chUpdateDate != ''): # YouTube-playlist follow playlist's update time
-       baseTimestamp = chUpdateDate
-    if (baseTimestamp != 0):
-       cursor.execute("""
-            update nnchannel set updateDate = from_unixtime(%s) 
-             where id = %s             
-                 """, (baseTimestamp, cId))
-
 # ch readonly set back when done all sync job
 # update ch cntEpisode
 

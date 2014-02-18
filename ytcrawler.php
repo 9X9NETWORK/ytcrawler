@@ -1,7 +1,7 @@
 <?php
 include 'Crawler.php';
 
-echo 'start crawling - ' . date("Y-m-d H:i:s\n");
+echo 'start crawling - ' . date("Y-m-d H:i:s\n") . ' (ch' . $argv[1] . ')';
 
 if (!isset($argv[1])) {
   die('FAILED - Require nnChannelId in input!!!');
@@ -35,7 +35,7 @@ echo 'ytcrawl for ' . $crl->ytId . "\n";
 $lines = $crl->get_yt_data();
 
 if ($lines == array()) {
-  die('FAILED - No Playable Video');
+  print('FAILED - No Playable Video');
 }
 
 file_put_contents($outFile, implode("\n", $lines));
