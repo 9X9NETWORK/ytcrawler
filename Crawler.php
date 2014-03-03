@@ -256,6 +256,10 @@ class Crawler {
 
 *********/
 
+      if (!isset($i->description)) {
+        $i->description = "";
+      }
+
       $data = array(
         'chId' => $chId,
         'uploader' => $i->uploader,
@@ -264,8 +268,8 @@ class Crawler {
         # remove LF and tab
         'title' => str_replace("\t", '  ', str_replace("\n", '   ', $i->title)),
         'uploaded' => strtotime($i->uploaded),
-        'duration' => $i->duration,
-        'thumbnail' => $i->thumbnail->sqDefault,
+        'duration' => (isset($i->duration) ? $i->duration : 0),
+        'thumbnail' => (isset($i->thumbnail->sqDefault) ? $i->thumbnail->sqDefault : $i->thumbnail->hqDefault),
         'description' => str_replace("\t", '  ', str_replace("\n", '   ', $i->description)),
       );
 
