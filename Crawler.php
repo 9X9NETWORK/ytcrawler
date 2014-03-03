@@ -180,7 +180,7 @@ class Crawler {
       $lines = array_merge($lines, $this->parse_items($d->data->items));
       
       $start_index = $start_index + 50;
-    } while ($totalItems >= $start_index);
+    } while ($start_index < 201 and $totalItems >= $start_index);
 
     return $lines;
 
