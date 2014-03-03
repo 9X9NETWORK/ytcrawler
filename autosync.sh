@@ -10,6 +10,7 @@
 #
 
 ytcrawler_dir=$(dirname "$(readlink -f "$0")")
+ytcrawler_tmp="/var/tmp/ytcrawl"
 apiserver=$(php -r "include '${ytcrawler_dir}/config.php'; echo \$apiserver;")
 dbhost=$(php -r "include '${ytcrawler_dir}/config.php'; echo \$dbhost;")
 dbuser=$(php -r "include '${ytcrawler_dir}/config.php'; echo \$dbuser;")
@@ -36,6 +37,13 @@ echo
 
 for ch in $chlist; do
     echo "--------------------"
+    req_file="$ytcrawler_tmp/ytcrawl_req.${ch}.json"
+    if test ! -f "$req_file"; then
+        echo "create request file for ${ch}"
+        sql_req="select sourceUrl from nnchannel where id=${ch};"
+        sourceUrl=$(echo "$sql_req" | mysql -u "$dbuser" --password="$dbpass" -h "$dbhost" nncloudtv_content | tail -1)
+        echo "{ \"id\":\"${ch}\", \"isRealtime\":"false", \"contentType\":"6", \"sourceUrl\":\"${sourceUrl}\" }" > "$req_file"
+    fi
     /usr/bin/php "$ytcrawler_dir/ytcrawler.php" $ch
     sleep 1
 done
