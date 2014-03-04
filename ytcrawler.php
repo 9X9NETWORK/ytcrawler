@@ -45,9 +45,10 @@ $meta = $crl->get_yt_meta();
 file_put_contents($metaFile, json_encode($meta));
 
 echo 'end crawling - ' . date("Y-m-d H:i:s\n");
+$log = '/var/tmp/ytcrawl/dbwritter-' . date("Ymd") . '.log';
 #run dbwriter.py in background
-file_put_contents('/var/tmp/ytcrawl/dbwritter.log', date("Y-m-d H:i:s\n"), FILE_APPEND);
-$command = '/usr/bin/python ' . __DIR__ . '/dbwritter.py ' . $decoded->id . ' >> /var/tmp/ytcrawl/dbwritter.log 2>&1 &';
+file_put_contents($log, date("Y-m-d H:i:s\n"), FILE_APPEND);
+$command = '/usr/bin/python ' . __DIR__ . '/dbwritter.py ' . $decoded->id . ' >> ' . $log . ' 2>&1 &';
 $ret = shell_exec($command);
 #header('Connection: Close');
 #die('OK');
