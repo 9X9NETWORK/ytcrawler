@@ -274,7 +274,8 @@ class Crawler {
         'title' => str_replace("\t", '  ', str_replace("\n", '   ', $i->title)),
         'uploaded' => strtotime($i->uploaded),
         'duration' => (isset($i->duration) ? $i->duration : 0),
-        'thumbnail' => (isset($i->thumbnail->sqDefault) ? $i->thumbnail->sqDefault : $i->thumbnail->hqDefault),
+        # use mqDefault as thumbnail, but it is not listed in json, so construct it from sqDefault
+        'thumbnail' => (isset($i->thumbnail->sqDefault) ? str_replace('/default.jpg', '/mqdefault.jpg', $i->thumbnail->sqDefault) : $i->thumbnail->hqDefault),
         'description' => str_replace("\t", '  ', str_replace("\n", '   ', $i->description)),
       );
 
