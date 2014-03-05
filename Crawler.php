@@ -28,6 +28,11 @@ class Crawler {
   public function get_yt_meta() {
     $meta = Array('title'=>'', 'description'=>'', 'thumbnail'=>'', 'updateDate'=>'');
     if ($this->ytType == 'channel') {
+        $ytAPI = 'http://gdata.youtube.com/feeds/api/users/' . $this->ytId . '/uploads?v=2&alt=json&prettyprint=true&max-results=1';
+        $data = json_decode(file_get_contents($ytAPI), true);
+        if ($data != null && isset($data['feed']['entry'][0])) {
+            $meta['updateDate'] = strtotime($data['feed']['entry'][0]['updated']['$t']);
+        }
         $ytAPI = 'http://gdata.youtube.com/feeds/api/users/' . $this->ytId . '?v=2&alt=json&prettyprint=true';
         $data = json_decode(file_get_contents($ytAPI), true);
         if ($data == null || !isset($data['entry'])) {
@@ -37,11 +42,6 @@ class Crawler {
             $meta['title'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['entry']['title']['$t']));
             $meta['thumbnail'] = $data['entry']['media$thumbnail']['url'];
             $meta['description'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['entry']['summary']['$t']));
-        }
-        $ytAPI = 'http://gdata.youtube.com/feeds/api/users/' . $this->ytId . '/uploads?v=2&alt=json&prettyprint=true&max-results=1';
-        $data = json_decode(file_get_contents($ytAPI), true);
-        if ($data != null && isset($data['feed'])) {
-            $meta['updateDate'] = strtotime($data['feed']['updated']['$t']);
         }
     } else if ($this->ytType == 'playlist') {
         $ytAPI = 'http://gdata.youtube.com/feeds/api/playlists/' . $this->ytId . '?v=2&alt=json&prettyprint=true&max-results=1';
