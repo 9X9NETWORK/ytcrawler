@@ -95,7 +95,7 @@ if ch_row is not None:
     print "-- check update time --"
     if (chUpdateDate != ''): # YouTube-playlist follow playlist's update time
        baseTimestamp = chUpdateDate
-    print "original channel time: " + str(ch_updateDate) + "; time from youtube video:" + str(baseTimestamp)
+    print "original channel time: " + str(ch_updateDate) + "; time from youtube video: " + str(baseTimestamp)
     if (baseTimestamp != 0):
        cursor.execute("""
             update nnchannel set updateDate = from_unixtime(%s) 
@@ -158,7 +158,7 @@ for line in feed:
   description = description[:253] + (description[253:] and '..')
   fileUrl = "http://www.youtube.com/watch?v=" + videoid
   # debug output
-  print "--------------------------------"
+  print "-------------------"
   print "cid:" + channelId
   print "username:" + username
   print "crawdate:" + crawldate
@@ -221,15 +221,21 @@ cursor.execute("""
 dbcontent.commit()  
 cursor.close ()
 
-print "-- record done --" + str(i)
+print "-- record done --"
+print "cntEpisode = " + str(cntEpisode) + ", i = " + str(i)
 
-print "-- call api --" + apiserver
-
+print "-- call api --"
 url = "http://" + apiserver + "/wd/programCache?channel=" + str(cId)
+print url;
 urllib2.urlopen(url).read()
 
 for eId in eIds:
    url = "http://" + apiserver + "/api/episodes/" + str(eId) + "/scheduledAutosharing/facebook"
    urllib2.urlopen(url).read()
-   print "autosharing episode ID : " + str(eId)
+   time.sleep(0.5)
+
+if len(eIds) is not 0:
+    print "new published episodes: " + ", ".join(str(eId) for eId in eIds)
+
+print "==== " + time.strftime("%r") + " ===="
 
