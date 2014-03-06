@@ -31,7 +31,7 @@ class Crawler {
         $ytAPI = 'http://gdata.youtube.com/feeds/api/users/' . $this->ytId . '/uploads?v=2&alt=json&prettyprint=true&max-results=1';
         $data = json_decode(file_get_contents($ytAPI), true);
         if ($data != null && isset($data['feed']['entry'][0])) {
-            $meta['updateDate'] = strtotime($data['feed']['entry'][0]['updated']['$t']);
+            $meta['updateDate'] = strtotime($data['feed']['entry'][0]['published']['$t']);
         }
         $ytAPI = 'http://gdata.youtube.com/feeds/api/users/' . $this->ytId . '?v=2&alt=json&prettyprint=true';
         $data = json_decode(file_get_contents($ytAPI), true);
