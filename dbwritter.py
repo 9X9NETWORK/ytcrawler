@@ -129,15 +129,9 @@ for d in data:
   dbDic[fileUrl] = fileUrl
   obj = textDic.get(fileUrl, 'empty')
   if obj == 'empty':
-     print "delete nnepisode and its programs:(eId)" + str(eId)
-     cursor.execute("""delete from nnepisode where id = %s
+     print "unattach nnepisode from nnchannel: " + str(eId)
+     cursor.execute("""update nnepisode set channelId = 0 where id = %s
         """, (eId)) 
-     cursor.execute("""delete from nnprogram where episodeId  = %s
-        """, (eId))
-     cursor.execute("""delete from poi where pointId in (select id from poi_point where targetId = %s);
-        """, (pId))
-     cursor.execute("""delete from poi_point where targetId = %s
-        """, (pId))
      
 # parsing episode
 print "-- parsing text --"
