@@ -200,9 +200,14 @@ for line in feed:
      # existing data, update the db
      eId = data[1]
      cursor.execute("""
-        update nnepisode set seq = %s where id = %s
-        """, (i, eId))
-     print "duplicate, update seq"
+        update nnepisode set seq = %s , name = %s , intro = %s , imageUrl = %s , duration = %s ,
+         publishDate = from_unixtime(%s) where id = %s
+        """, (i, name, description, thumbnail, duration, timestamp, eId))
+     cursor.execute("""
+        update nnprogram set name = %s , intro = %s , imageUrl = %s , duration = %s ,
+         publishDate = from_unixtime(%s) where channelId = %s , episodeId = %s 
+        """, (name, description, thumbnail, duration, timestamp, cId, eId))
+     print "duplicate, update seq and all meta"
   i = i + 1
   cntEpisode = cntEpisode + 1
    
