@@ -8,6 +8,13 @@ $r-> run();
 
 echo 'end crawling - ' . date("Y-m-d H:i:s\n");
 
+$log = '/var/tmp/ytcrawl/ytwritter-' . date("Ymd") . '.log';
+#run dbwriter.py in background
+file_put_contents($log, date("Y-m-d H:i:s\n"), FILE_APPEND);
+$command = '/usr/bin/python ' . __DIR__ . '/ytwritter.py 32585 >> ' . $log . ' 2>&1 &';
+$ret = shell_exec($command);
+
+
 class Reddit {
   # reddit channel ID = 32585
   public $channelId = '32585';

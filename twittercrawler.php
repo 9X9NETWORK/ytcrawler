@@ -3,12 +3,19 @@
 echo 'start crawling - ' . date("Y-m-d H:i:s\n") . ' (twitter ch 32586)';
 
 require_once('config_twitter.php');
+# get twitter api from https://github.com/J7mbo/twitter-api-php
 require_once('twitter-api-php/TwitterAPIExchange.php');
 
 $t = new Twitter();
 $t->run();
 
 echo 'end crawling - ' . date("Y-m-d H:i:s\n");
+
+$log = '/var/tmp/ytcrawl/ytwritter-' . date("Ymd") . '.log';
+#run dbwriter.py in background
+file_put_contents($log, date("Y-m-d H:i:s\n"), FILE_APPEND);
+$command = '/usr/bin/python ' . __DIR__ . '/ytwritter.py 32586 >> ' . $log . ' 2>&1 &';
+$ret = shell_exec($command);
 
 
 class Twitter {
