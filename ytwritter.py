@@ -46,7 +46,7 @@ dbcontent = MySQLdb.connect (host = dbhost,
 cId = sys.argv[1]
 
 #!!!!!!
-fileName = 'whatson.feed.' + cId + '.txt'
+fileName = '/var/tmp/ytcrawl/whatson.feed.' + cId + '.txt'
 response = open(fileName, 'r')
 feed = response.readlines()                  
 response.close()
