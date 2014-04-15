@@ -49,6 +49,10 @@ class Twitter {
       1, // worldwide
       23424977, // usa
       23424936, // Russia
+      24554868, // United Kingdom
+      23424748, // Australia
+      23424901, // Malaysia
+      23424775, // Canada
       //24865675, // Europe
       //2347563, // California
       12587712, // Santa Clara
@@ -57,7 +61,13 @@ class Twitter {
       2487956, // San Francisco, CA
       2459115, // New York
       2514815, // Washington
-      //2347591, // New York
+      2367105, // Boston, MA
+      2471388, // Phoenix Tx
+      44418, // London, UK
+      9807, // Vancouvour Canada
+      4118, // Toronto Canada
+      2450022, // Miami Fl
+      1103816, // Meilbourn Australia
     );
 
     foreach ($woeids as $w) {
