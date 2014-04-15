@@ -139,10 +139,10 @@ class Twitter {
 
       if (isset($status->retweeted_status)) {
         $statuses = array($status, $status->retweeted_status);
-        echo "with retweet\n";
+        #echo "with retweet\n";
       } else {
         $statuses = array($status);
-        echo "without retweet\n";
+        #echo "without retweet\n";
       }
 
       foreach ($statuses as $s) {
