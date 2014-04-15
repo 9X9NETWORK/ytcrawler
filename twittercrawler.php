@@ -81,11 +81,12 @@ class Twitter {
         file_put_contents('/var/tmp/hashtag_' . $h . '.json', $tweets);
         $this->get_yt_videos($tweets);
       }
+      sleep(7);
+    }
 
-      if ($this->ytVideos == array()) {
-        print("FAILED - No Youtube Video\n");
-        return;
-      }
+    if ($this->ytVideos == array()) {
+      print("FAILED - No Youtube Video\n");
+      return;
     }
 
     file_put_contents($this->outFile, implode("\n", array_reverse($this->ytVideos)));
