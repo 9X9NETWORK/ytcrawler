@@ -41,7 +41,7 @@ class Reddit {
   
     for ($i=1;$i<20;$i++) {
       $json = $this->get_reddit();
-      file_put_contents('/tmp/reddit' . $i . '.json', $json);
+      file_put_contents('/var/tmp/reddit' . $i . '.json', $json);
       $this->get_yt_videos($json);
       $j = json_decode($json); if ($j->data->after == Null) {
         echo 'after is null at loop: ' . $i . "\n";
