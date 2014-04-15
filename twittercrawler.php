@@ -2,9 +2,9 @@
 # crawl Twitter trending
 echo 'start crawling - ' . date("Y-m-d H:i:s\n") . ' (twitter ch 32586)';
 
-require_once('config_twitter.php');
-# get twitter api from https://github.com/J7mbo/twitter-api-php
-require_once('twitter-api-php/TwitterAPIExchange.php');
+require_once(__DIR__ . '/config_twitter.php');
+//# get twitter api from https://github.com/J7mbo/twitter-api-php
+require_once(__DIR__ . '/twitter-api-php/TwitterAPIExchange.php');
 
 $t = new Twitter();
 $t->run();
