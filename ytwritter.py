@@ -80,7 +80,7 @@ for line in feed:
 
 for key in updateDic:
    # can be used for id update
-   print "add to recycle:" + key
+   print "add to recycle:" + str(key)
    recycleId.add(key)    
 
 # parsing episode
