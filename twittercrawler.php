@@ -5,6 +5,7 @@ echo 'start crawling - ' . date("Y-m-d H:i:s\n") . ' (twitter ch 32586)';
 require_once(__DIR__ . '/config_twitter.php');
 //# get twitter api from https://github.com/J7mbo/twitter-api-php
 require_once(__DIR__ . '/twitter-api-php/TwitterAPIExchange.php');
+require_once(__DIR__ . '/jsonpp.php');
 
 $t = new Twitter();
 $t->run();
@@ -45,41 +46,42 @@ class Twitter {
   }
 
   public function run() {
+    # twitter rate limit to 15
     $woeids = array(
       1, // worldwide
       23424977, // usa
       23424936, // Russia
-      //24554868, // United Kingdom
-      23424748, // Australia
-      23424901, // Malaysia
+      //23424748, // Australia
+      ///23424901, // Malaysia
       23424775, // Canada
-      //24865675, // Europe
-      //2347563, // California
-      //12587712, // Santa Clara
       2488042, // San Jose, CA
       2442047, // Los Angeles
       2487956, // San Francisco, CA
       2459115, // New York
       2514815, // Washington
       2367105, // Boston, MA
-      2471388, // Phoenix Tx
+      2450022, // Miami Fl
       44418, // London, UK
       9807, // Vancouvour Canada
       4118, // Toronto Canada
-      2450022, // Miami Fl
       1103816, // Meilbourn Australia
+      //24554868, // United Kingdom
+      //24865675, // Europe
+      //2347563, // California
+      //12587712, // Santa Clara
+      //2471388, // Phoenix Tx
     );
 
     foreach ($woeids as $w) {
       $trends = $this->get_trending($w);
       # php 5.4
       # file_put_contents('/var/tmp/trending.json', json_encode(json_decode($trends, true), JSON_PRETTY_PRINT));
-      file_put_contents('/var/tmp/trending_' . $w . '.json', $trends);
+      file_put_contents('/var/tmp/trending_' . $w . '.json', jsonpp($trends));
       echo 'Working on ' . $w . "\n";
       $hashtags = $this->get_hashtags($trends);
       foreach ($hashtags as $h) {
         $tweets = $this->get_tweets_by_hashtag($h);
-        file_put_contents('/var/tmp/hashtag_' . $h . '.json', $tweets);
+        file_put_contents('/var/tmp/hashtag_' . $h . '.json', jsonpp($tweets));
         $this->get_yt_videos($tweets);
       }
       sleep(7);
