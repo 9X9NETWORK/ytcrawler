@@ -13,7 +13,7 @@ echo 'end crawling - ' . date("Y-m-d H:i:s\n");
 
 $log = '/var/tmp/ytcrawl/ytwritter-' . date("Ymd") . '.log';
 #run dbwriter.py in background
-file_put_contents($log, date("Y-m-d H:i:s\n"), FILE_APPEND);
+file_put_contents($log, date("Y-m-d H:i:s twitter ch 32586\n"), FILE_APPEND);
 $command = '/usr/bin/python ' . __DIR__ . '/ytwritter.py 32586 >> ' . $log . ' 2>&1 &';
 $ret = shell_exec($command);
 
@@ -49,13 +49,13 @@ class Twitter {
       1, // worldwide
       23424977, // usa
       23424936, // Russia
-      24554868, // United Kingdom
+      //24554868, // United Kingdom
       23424748, // Australia
       23424901, // Malaysia
       23424775, // Canada
       //24865675, // Europe
       //2347563, // California
-      12587712, // Santa Clara
+      //12587712, // Santa Clara
       2488042, // San Jose, CA
       2442047, // Los Angeles
       2487956, // San Francisco, CA
@@ -75,6 +75,7 @@ class Twitter {
       # php 5.4
       # file_put_contents('/var/tmp/trending.json', json_encode(json_decode($trends, true), JSON_PRETTY_PRINT));
       file_put_contents('/var/tmp/trending_' . $w . '.json', $trends);
+      echo 'Working on ' . $w . "\n";
       $hashtags = $this->get_hashtags($trends);
       foreach ($hashtags as $h) {
         $tweets = $this->get_tweets_by_hashtag($h);
@@ -117,7 +118,7 @@ class Twitter {
     $j = json_decode($trends);
 
     if (isset($j->errors)) {
-      print_r($j->errors);
+      print_r($j);
       return $this->hashtags;
     }
 
@@ -142,8 +143,11 @@ class Twitter {
   }
 
   public function get_yt_videos($json) {
-    $pattern1 = '~https?://(?:www.)?youtube\.com/watch\?.*v=([a-zA-Z0-9_-]{11})~';
-    $pattern2 = '~https?://youtu\.be/([a-zA-Z0-9_-]{11})~';
+    $pattern1 = '~https?://(?:www.)?youtube\.com/watch\?.*v=([a-zA-Z0-9_-]{11}).*~';
+    $pattern2 = '~https?://youtu\.be/([a-zA-Z0-9_-]{11}).*~';
+    # https://www.youtube.com/embed/U2GQsQq6HGk
+    # https://www.youtube.com/v/U2GQsQq6HGk
+    $pattern3 = '~https?://(?:www.)?youtube\.com/(?:v|embed)/([a-zA-Z0-9_-]{11}).*~';
     $j = json_decode($json);
 
     foreach ($j->statuses as $status) {
@@ -167,7 +171,9 @@ class Twitter {
           continue;
         }
 
-        if(preg_match($pattern1, $expanded_url, $matches) || preg_match($pattern2, $expanded_url, $matches)) {
+        if(preg_match($pattern1, $expanded_url, $matches) ||
+           preg_match($pattern2, $expanded_url, $matches) ||
+           preg_match($pattern3, $expanded_url, $matches)) {
           print_r($matches); 
           if (in_array($matches[1], $this->ytIds)) {
             continue;
