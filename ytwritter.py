@@ -14,7 +14,7 @@ dbuser = 'root'
 dbpass = ''
 
 # get db info from config.php
-fh = open(os.path.dirname(__file__) + '/config.php', 'r')
+fh = open(os.path.dirname(__file__) + 'config.php', 'r')
 config = fh.readlines()
 fh.close()
 
@@ -56,7 +56,7 @@ cursor = dbcontent.cursor()
 # read db video id to dic
 dbDic = {}
 updateDic = {}
-recycleId = ()
+recycleId = []
 
 cursor.execute("""
    select id, ytVideoId from ytprogram where channelId = %s
@@ -81,7 +81,7 @@ for line in feed:
 for key in updateDic:
    # can be used for id update
    print "add to recycle:" + str(key)
-   recycleId.add(key)    
+   recycleId.append(key)    
 
 # parsing episode
 print "-- parsing text --"
@@ -128,7 +128,7 @@ for line in feed:
        if i > 200:
           break
        if i < recycleLen:
-          print "use recycle id: " + str(reclcyeId[i]) 
+          print "use recycle id: " + str(recycleId[i]) 
           cursor.execute("""
              update ytprogram set name = %s, intro = %s, imageUrl = %s, duration = %s, ytVideoId = %s, updateDate = from_unixtime(%s), crawlDate = from_unixtime(%s)
               where id = %s
