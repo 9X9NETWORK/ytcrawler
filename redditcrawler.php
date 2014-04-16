@@ -10,7 +10,7 @@ echo 'end crawling - ' . date("Y-m-d H:i:s\n");
 
 $log = '/var/tmp/ytcrawl/ytwritter-' . date("Ymd") . '.log';
 #run dbwriter.py in background
-file_put_contents($log, date("Y-m-d H:i:s\n"), FILE_APPEND);
+file_put_contents($log, date("Y-m-d H:i:s reddit ch 32585\n"), FILE_APPEND);
 $command = '/usr/bin/python ' . __DIR__ . '/ytwritter.py 32585 >> ' . $log . ' 2>&1 &';
 $ret = shell_exec($command);
 
@@ -89,13 +89,18 @@ class Reddit {
   }
 
   public function get_yt_videos($json) {
-    $pattern1 = '~https?://(?:www.)?youtube\.com/watch\?.*v=([a-zA-Z0-9_-]{11})~';
-    $pattern2 = '~https?://youtu\.be/([a-zA-Z0-9_-]{11})~';
+    $pattern1 = '~https?://(?:www.)?youtube\.com/watch\?.*v=([a-zA-Z0-9_-]{11}).*~';
+    $pattern2 = '~https?://youtu\.be/([a-zA-Z0-9_-]{11}).*~';
+    # https://www.youtube.com/embed/U2GQsQq6HGk
+    # https://www.youtube.com/v/U2GQsQq6HGk
+    $pattern3 = '~https?://(?:www.)?youtube\.com/(?:v|embed)/([a-zA-Z0-9_-]{11}).*~';
     $j = json_decode($json);
     
     
     foreach ($j->data->children as $c) {
-      if (preg_match($pattern1, $c->data->url, $matches) || preg_match($pattern2, $c->data->url, $matches)) {
+      if (preg_match($pattern1, $c->data->url, $matches) ||
+          preg_match($pattern2, $c->data->url, $matches) ||
+          preg_match($pattern3, $c->data->url, $matches)) {
         print_r($matches);
 
         if (in_array($matches[1], $this->ytIds)) {
