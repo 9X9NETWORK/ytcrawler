@@ -3,6 +3,8 @@
 
 echo 'start crawling - ' . date("Y-m-d H:i:s\n") . ' (reddit ch 32585)';
 
+require_once(__DIR__ . '/jsonpp.php');
+
 $r = new Reddit();
 $r-> run();
 
@@ -41,7 +43,7 @@ class Reddit {
   
     for ($i=1;$i<20;$i++) {
       $json = $this->get_reddit();
-      file_put_contents('/var/tmp/reddit' . $i . '.json', $json);
+      file_put_contents('/var/tmp/reddit' . $i . '.json', jsonpp($json));
       $this->get_yt_videos($json);
       $j = json_decode($json); if ($j->data->after == Null) {
         echo 'after is null at loop: ' . $i . "\n";
