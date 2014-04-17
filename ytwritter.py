@@ -14,7 +14,7 @@ dbuser = 'root'
 dbpass = ''
 
 # get db info from config.php
-fh = open(os.path.dirname(__file__) + 'config.php', 'r')
+fh = open(os.path.dirname(__file__) + '/config.php', 'r')
 config = fh.readlines()
 fh.close()
 
