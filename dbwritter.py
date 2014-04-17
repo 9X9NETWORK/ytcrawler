@@ -152,6 +152,7 @@ for line in feed:
   thumbnail = data[7]
   description = data[8]
   description = description[:253] + (description[253:] and '..')
+  state = data[9]
   fileUrl = "http://www.youtube.com/watch?v=" + videoid
   # debug output
   print "-------------------"
@@ -163,6 +164,7 @@ for line in feed:
   print "duration:" + duration 
   print "thumbnail:" + thumbnail
   print "description:" + description
+  print "state:" + state
   print "fileUrl:" + fileUrl
 
   if channelId != cId:
@@ -175,6 +177,9 @@ for line in feed:
      # workaround
      print "timestamp is zero (maybe a private video)"
      timestamp = "1"
+  isPublic = '\x01';
+  if state == "restricted":
+     isPublic = '\x00';
   
   cursor = dbcontent.cursor() 
   cursor.execute("""
@@ -186,8 +191,8 @@ for line in feed:
      print "new entry, video:" + fileUrl 
      cursor.execute("""
         insert into nnepisode (channelId, name, intro, imageUrl, duration, seq, publishDate, isPublic)
-                       values (%s, %s, %s, %s, %s, %s, from_unixtime(%s), true)
-        """, (cId, name, description, thumbnail, duration, i, timestamp))
+                       values (%s, %s, %s, %s, %s, %s, from_unixtime(%s), %s)
+        """, (cId, name, description, thumbnail, duration, i, timestamp, isPublic))
      eId = cursor.lastrowid
      eIds.append(eId)
      print "eId" + str(eId)
@@ -201,8 +206,8 @@ for line in feed:
      eId = data[1]
      cursor.execute("""
         update nnepisode set seq = %s , name = %s , intro = %s , imageUrl = %s , duration = %s ,
-         publishDate = from_unixtime(%s) where id = %s
-        """, (i, name, description, thumbnail, duration, timestamp, eId))
+         publishDate = from_unixtime(%s) , isPublic = %s where id = %s
+        """, (i, name, description, thumbnail, duration, timestamp, isPublic, eId))
      cursor.execute("""
         update nnprogram set name = %s , intro = %s , imageUrl = %s , duration = %s ,
          publishDate = from_unixtime(%s) where channelId = %s and episodeId = %s 
