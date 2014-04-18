@@ -104,7 +104,7 @@ class Reddit {
       #if (preg_match($pattern1, $c->data->url, $matches) ||
       #    preg_match($pattern2, $c->data->url, $matches) ||
       #    preg_match($pattern3, $c->data->url, $matches)) {
-      if (preg_match($pattern, $c->data->url, $matches) {
+      if (preg_match($pattern, $c->data->url, $matches)) {
         print_r($matches);
 
         if (in_array($matches[1], $this->ytIds)) {

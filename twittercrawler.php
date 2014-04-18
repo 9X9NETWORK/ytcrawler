@@ -174,7 +174,7 @@ class Twitter {
           continue;
         }
 
-        if(preg_match($pattern, $expanded_url, $matches) {
+        if(preg_match($pattern, $expanded_url, $matches)) {
           print_r($matches); 
           if (in_array($matches[1], $this->ytIds)) {
             continue;
