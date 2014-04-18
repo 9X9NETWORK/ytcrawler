@@ -91,18 +91,20 @@ class Reddit {
   }
 
   public function get_yt_videos($json) {
-    $pattern1 = '~https?://(?:www.)?youtube\.com/watch\?.*v=([a-zA-Z0-9_-]{11}).*~';
-    $pattern2 = '~https?://youtu\.be/([a-zA-Z0-9_-]{11}).*~';
-    # https://www.youtube.com/embed/U2GQsQq6HGk
-    # https://www.youtube.com/v/U2GQsQq6HGk
-    $pattern3 = '~https?://(?:www.)?youtube\.com/(?:v|embed)/([a-zA-Z0-9_-]{11}).*~';
+    #$pattern1 = '~https?://(?:www.)?youtube\.com/watch\?.*v=([a-zA-Z0-9_-]{11}).*~';
+    #$pattern2 = '~https?://youtu\.be/([a-zA-Z0-9_-]{11}).*~';
+    ## https://www.youtube.com/embed/U2GQsQq6HGk
+    ## https://www.youtube.com/v/U2GQsQq6HGk
+    #$pattern3 = '~https?://(?:www.)?youtube\.com/(?:v|embed)/([a-zA-Z0-9_-]{11}).*~';
+    $pattern = '~^(?:https?://)?(?:www|m\.)?(?:youtu\.be/|youtube\.com(?:/embed/|/v/|/watch\?v=|/watch\?.+&v=))([a-zA-Z0-9_-]{11})(?:.+)?$~x';
     $j = json_decode($json);
     
     
     foreach ($j->data->children as $c) {
-      if (preg_match($pattern1, $c->data->url, $matches) ||
-          preg_match($pattern2, $c->data->url, $matches) ||
-          preg_match($pattern3, $c->data->url, $matches)) {
+      #if (preg_match($pattern1, $c->data->url, $matches) ||
+      #    preg_match($pattern2, $c->data->url, $matches) ||
+      #    preg_match($pattern3, $c->data->url, $matches)) {
+      if (preg_match($pattern, $c->data->url, $matches) {
         print_r($matches);
 
         if (in_array($matches[1], $this->ytIds)) {
