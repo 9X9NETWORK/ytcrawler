@@ -178,7 +178,7 @@ for line in feed:
      print "timestamp is zero (maybe a private video)"
      timestamp = "1"
   isPublic = '\x01';
-  if state == "restricted":
+  if state.strip() == "restricted":
      isPublic = '\x00';
   
   cursor = dbcontent.cursor() 
