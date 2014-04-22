@@ -199,8 +199,8 @@ for line in feed:
      # write to nnprogram
      cursor.execute("""
         insert into nnprogram (channelId, episodeId, name, intro, imageUrl, duration, fileUrl, publishDate, contentType, isPublic, status)
-                      values (%s, %s, %s, %s, %s, %s, %s, from_unixtime(%s), 1, true, 0)
-        """, (cId, eId, name, description, thumbnail, duration, fileUrl, timestamp))
+                      values (%s, %s, %s, %s, %s, %s, %s, from_unixtime(%s), 1, %s, 0)
+        """, (cId, eId, name, description, thumbnail, duration, fileUrl, timestamp, isPublic))
   else:
      # existing data, update the db
      eId = data[1]
@@ -210,8 +210,8 @@ for line in feed:
         """, (i, name, description, thumbnail, duration, timestamp, isPublic, eId))
      cursor.execute("""
         update nnprogram set name = %s , intro = %s , imageUrl = %s , duration = %s ,
-         publishDate = from_unixtime(%s) where channelId = %s and episodeId = %s 
-        """, (name, description, thumbnail, duration, timestamp, cId, eId))
+         publishDate = from_unixtime(%s) , isPublic = %s where channelId = %s and episodeId = %s 
+        """, (name, description, thumbnail, duration, timestamp, isPublic, cId, eId))
      print "duplicate, update seq and all meta"
   i = i + 1
   cntEpisode = cntEpisode + 1
