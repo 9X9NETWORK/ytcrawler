@@ -137,7 +137,7 @@ for d in data:
      
 # parsing episode
 print "-- parsing text --"
-i = 1
+i = 1 #seq
 cntEpisode = 0
 eIds = []
 for line in feed:
@@ -152,7 +152,7 @@ for line in feed:
   thumbnail = data[7]
   description = data[8]
   description = description[:253] + (description[253:] and '..')
-  state = data[9]
+  state = data[9].strip()
   fileUrl = "http://www.youtube.com/watch?v=" + videoid
   # debug output
   print "-------------------"
@@ -177,9 +177,11 @@ for line in feed:
      # workaround
      print "timestamp is zero (maybe a private video)"
      timestamp = "1"
-  isPublic = '\x01';
-  if state.strip() == "restricted":
+  if state == "restricted":
      isPublic = '\x00';
+  else:
+     isPublic = '\x01';
+     cntEpisode = cntEpisode + 1
   
   cursor = dbcontent.cursor() 
   cursor.execute("""
@@ -214,7 +216,6 @@ for line in feed:
         """, (name, description, thumbnail, duration, timestamp, isPublic, cId, eId))
      print "duplicate, update seq and all meta"
   i = i + 1
-  cntEpisode = cntEpisode + 1
    
 # ch readonly set back when done all sync job
 # update ch cntEpisode
