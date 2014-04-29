@@ -277,7 +277,8 @@ class Crawler {
         # use mqDefault as thumbnail, but it is not listed in json, so construct it from sqDefault
         'thumbnail' => (isset($i->thumbnail->sqDefault) ? str_replace('/default.jpg', '/mqdefault.jpg', $i->thumbnail->sqDefault) : $i->thumbnail->hqDefault),
         'description' => str_replace("\t", '  ', str_replace("\n", '   ', $i->description)),
-        'state' => (isset($i->status->value) && $i->status->value == 'restricted') ? 'restricted' : 'fine'
+        'state' => (isset($i->status->value) && $i->status->value == 'restricted') ? 'restricted' : 'fine',
+        'reason' => (isset($i->status->reason)) ? $i->status->reason : 'fine'
       );
 
       $line = implode("\t", $data);

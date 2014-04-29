@@ -153,6 +153,7 @@ for line in feed:
   description = data[8]
   description = description[:253] + (description[253:] and '..')
   state = data[9].strip()
+  reason = data[10].strip()
   fileUrl = "http://www.youtube.com/watch?v=" + videoid
   # debug output
   print "-------------------"
@@ -177,7 +178,7 @@ for line in feed:
      # workaround
      print "timestamp is zero (maybe a private video)"
      timestamp = "1"
-  if state == "restricted":
+  if state == "restricted" and reason == "private":
      isPublic = '\x00';
   else:
      isPublic = '\x01';
