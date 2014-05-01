@@ -137,7 +137,7 @@ for d in data:
      
 # parsing episode
 print "-- parsing text --"
-i = 1
+i = 1 #seq
 cntEpisode = 0
 eIds = []
 for line in feed:
@@ -152,6 +152,8 @@ for line in feed:
   thumbnail = data[7]
   description = data[8]
   description = description[:253] + (description[253:] and '..')
+  state = data[9].strip()
+  reason = data[10].strip()
   fileUrl = "http://www.youtube.com/watch?v=" + videoid
   # debug output
   print "-------------------"
@@ -163,6 +165,7 @@ for line in feed:
   print "duration:" + duration 
   print "thumbnail:" + thumbnail
   print "description:" + description
+  print "state:" + state
   print "fileUrl:" + fileUrl
 
   if channelId != cId:
@@ -175,6 +178,11 @@ for line in feed:
      # workaround
      print "timestamp is zero (maybe a private video)"
      timestamp = "1"
+  if state == "restricted" and reason == "private":
+     isPublic = '\x00';
+  else:
+     isPublic = '\x01';
+     cntEpisode = cntEpisode + 1
   
   cursor = dbcontent.cursor() 
   cursor.execute("""
@@ -186,25 +194,29 @@ for line in feed:
      print "new entry, video:" + fileUrl 
      cursor.execute("""
         insert into nnepisode (channelId, name, intro, imageUrl, duration, seq, publishDate, isPublic)
-                       values (%s, %s, %s, %s, %s, %s, from_unixtime(%s), true)
-        """, (cId, name, description, thumbnail, duration, i, timestamp))
+                       values (%s, %s, %s, %s, %s, %s, from_unixtime(%s), %s)
+        """, (cId, name, description, thumbnail, duration, i, timestamp, isPublic))
      eId = cursor.lastrowid
      eIds.append(eId)
      print "eId" + str(eId)
      # write to nnprogram
      cursor.execute("""
         insert into nnprogram (channelId, episodeId, name, intro, imageUrl, duration, fileUrl, publishDate, contentType, isPublic, status)
-                      values (%s, %s, %s, %s, %s, %s, %s, from_unixtime(%s), 1, true, 0)
-        """, (cId, eId, name, description, thumbnail, duration, fileUrl, timestamp))
+                      values (%s, %s, %s, %s, %s, %s, %s, from_unixtime(%s), 1, %s, 0)
+        """, (cId, eId, name, description, thumbnail, duration, fileUrl, timestamp, isPublic))
   else:
      # existing data, update the db
      eId = data[1]
      cursor.execute("""
-        update nnepisode set seq = %s where id = %s
-        """, (i, eId))
-     print "duplicate, update seq"
+        update nnepisode set seq = %s , name = %s , intro = %s , imageUrl = %s , duration = %s ,
+         publishDate = from_unixtime(%s) , isPublic = %s where id = %s
+        """, (i, name, description, thumbnail, duration, timestamp, isPublic, eId))
+     cursor.execute("""
+        update nnprogram set name = %s , intro = %s , imageUrl = %s , duration = %s ,
+         publishDate = from_unixtime(%s) , isPublic = %s where channelId = %s and episodeId = %s 
+        """, (name, description, thumbnail, duration, timestamp, isPublic, cId, eId))
+     print "duplicate, update seq and all meta"
   i = i + 1
-  cntEpisode = cntEpisode + 1
    
 # ch readonly set back when done all sync job
 # update ch cntEpisode

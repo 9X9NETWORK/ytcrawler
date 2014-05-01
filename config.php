@@ -1,8 +1,8 @@
 <?php
 
-$apiserver = 'localhost:8080';
-$dbhost = 'localhost';
+$apiserver = 'www.9x9.tv';
+$dbhost = 'ec2-54-245-100-224.us-west-2.compute.amazonaws.com';
 $dbuser = 'root';
-$dbpass = '';
+$dbpass = 'letlet';
 
 ?>
