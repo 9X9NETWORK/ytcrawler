@@ -87,6 +87,7 @@ for key in updateDic:
 print "-- parsing text --"
 i = 1
 recycleLen = len(recycleId)
+chImageUrl = ""
 for line in feed:
   data = line.split('\t')
   channelId = data[0] #supposedly the same as argument
@@ -115,6 +116,16 @@ for line in feed:
      print "Fatal: channelId not matching"
      sys.exit(0) 
 
+  if i < 4:
+     chImageUrl = chImageUrl + "|" + thumbnail
+     print "i=" + str(i) + " ch thumbnail:" + chImageUrl
+
+  if i == 4:
+     chImageUrl = chImageUrl[1:]
+     cursor.execute("""update nnchannel set imageUrl = %s where id=%s
+             """, (chImageUrl, cId))
+     print ("update ch thumbnail:" + chImageUrl)
+
   if timestamp == "0":
      # workaround
      print "timestamp is zero (maybe a private video)"
@@ -142,7 +153,7 @@ for line in feed:
              """, (cId, name, description, thumbnail, duration, videoId, timestamp, crawldate))
     except MySQLdb.IntegrityError as e:
       print "--->SQL Error: %s" % e
-    i = i + 1
+  i = i + 1
    
 dbcontent.commit()  
 cursor.close ()
