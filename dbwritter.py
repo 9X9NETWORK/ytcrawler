@@ -151,7 +151,7 @@ for line in feed:
   duration = data[6]
   thumbnail = data[7]
   description = data[8]
-  description = description[:253] + (description[253:] and '..')
+  description = description[:1498] + (description[1498:] and '..')
   state = data[9].strip()
   reason = data[10].strip()
   fileUrl = "http://www.youtube.com/watch?v=" + videoid
