@@ -16,7 +16,7 @@ for i in range(0, 24):
    stream.close()
    time.sleep(10)
 
-url = "http://" + host + "/wd/channelCache?channel=32580"
+url = "http://" + host + "/wd/channelCache?channel=32777"
 print url
 stream = urllib.urlopen(url)
 stream.close()
