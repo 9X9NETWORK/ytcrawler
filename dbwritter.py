@@ -233,7 +233,7 @@ print "-- record done --"
 print "cntEpisode = " + str(cntEpisode) + ", i = " + str(i)
 
 print "-- call api --"
-url = "http://" + apiserver + "/wd/programCache?channel=" + str(cId)
+url = "http://" + apiserver + "/wd/programCache?channel=" + str(cId) + "&t=" + str(int(time.time()))
 print url;
 urllib2.urlopen(url).read()
 
