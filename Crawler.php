@@ -9,6 +9,12 @@ class Crawler {
   public $ytUrl;
   public $ytType;
   public $ytId;
+  public $metaTitle = '';
+  public $metaThumbnail = '';
+  public $metaDescription = '';
+  public $metaUpdateDate = '';
+
+  public $metaError = true;
 
   public function __construct($chId, $url) {
     $this->crawlTime = time();
@@ -27,12 +33,20 @@ class Crawler {
 
   public function get_yt_meta() {
     $meta = Array('title'=>'', 'description'=>'', 'thumbnail'=>'', 'updateDate'=>'');
-    if ($this->ytType == 'channel') {
+    if ($this->metaError) {
+      $meta['error'] = true;
+    } else {
+      if ($this->ytType == 'channel') {
+        # use the data from get_yt_data to avoid duplicated call to youtube
+        /*
         $ytAPI = 'http://gdata.youtube.com/feeds/api/users/' . $this->ytId . '/uploads?v=2&alt=json&prettyprint=true&max-results=1';
         $data = json_decode(file_get_contents($ytAPI), true);
         if ($data != null && isset($data['feed']['entry'][0])) {
             $meta['updateDate'] = strtotime($data['feed']['entry'][0]['published']['$t']);
         }
+        */
+        $meta['updateDate'] = $this->metaUpdateDate;
+
         $ytAPI = 'http://gdata.youtube.com/feeds/api/users/' . $this->ytId . '?v=2&alt=json&prettyprint=true';
         $data = json_decode(file_get_contents($ytAPI), true);
         if ($data == null || !isset($data['entry'])) {
@@ -43,7 +57,9 @@ class Crawler {
             $meta['thumbnail'] = $data['entry']['media$thumbnail']['url'];
             $meta['description'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['entry']['summary']['$t']));
         }
-    } else if ($this->ytType == 'playlist') {
+      } else if ($this->ytType == 'playlist') {
+        # use the data from get_yt_data to avoid duplicated call to youtube
+        /*
         $ytAPI = 'http://gdata.youtube.com/feeds/api/playlists/' . $this->ytId . '?v=2&alt=json&prettyprint=true&max-results=1';
         $data = json_decode(file_get_contents($ytAPI), true);
         if ($data == null || !isset($data['feed'])) {
@@ -55,12 +71,18 @@ class Crawler {
             $meta['description'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['feed']['subtitle']['$t']));
             $meta['updateDate'] = strtotime($data['feed']['updated']['$t']);
         }
+        */
+        $meta['title'] = $this->metaTitle;
+        $meta['thumbnail'] = $this->metaThumbnail;
+        $meta['description'] = $this->metaDescription;
+        $meta['updateDate'] = $this->metaUpdateDate;
+      }
+      echo $ytAPI . "\n";
     }
-    echo $ytAPI . "\n";
     return $meta;
   }
 
-  public function get_yt_playlist_thumbnail($thumbnails) {
+  public function get_yt_playlist_thumbnail($thumbnails, $prefer = 'default') {
   	
     $default = null;
     $mqdefault = null;
@@ -78,6 +100,9 @@ class Crawler {
             $sddefault = $thumbnail['url'];
     }
     
+
+    if ($$prefer != null)
+        return $$prefer;
     if ($default != null)
         return $default;
     else if ($mqdefault != null)
@@ -106,7 +131,7 @@ class Crawler {
       $username = $this->ytId;
     }
 
-    $ytAPI = 'http://gdata.youtube.com/feeds/api/users/' . $username . '/uploads?v=2&alt=jsonc&max-results=50&prettyprint=true&start-index=' . $start_index;
+    $ytAPI = 'http://gdata.youtube.com/feeds/api/users/' . $username . '/uploads?v=2&alt=json&max-results=50&prettyprint=true&start-index=' . $start_index;
     $this->ytData = file_get_contents($ytAPI);
     $this->headers = $http_response_header;
     $this->httpcode = $this->header_code($this->headers);
@@ -128,16 +153,24 @@ class Crawler {
         return $lines;
       }
 
-      $d = json_decode($ytData);
+      $d = json_decode($ytData, true);
 
-      if (!isset($d->data->items)) {
+      if (!isset($d['feed']['entry'])) {
         print_r("FAILED - No Video entry\n");
         return $lines;
       }
 
-      $totalItems = $d->data->totalItems;
+      # save the updateDate for meta
+      if ($start_index == 1 ) {
+        if (isset($d['feed']['entry'][0]['published']['$t'])) {
+          $this->metaError = false;
+          $this->metaUpdateDate = strtotime($d['feed']['entry'][0]['published']['$t']);
+        }
+      }
 
-      $lines = array_merge($lines, $this->parse_items($d->data->items));
+      $totalItems = $d['feed']['openSearch$totalResults']['$t'];
+
+      $lines = array_merge($lines, $this->parse_items($d['feed']['entry']));
 
       $start_index = $start_index + 50;
       # limit 200 videos per channel
@@ -151,7 +184,7 @@ class Crawler {
       $playlistId = $this->ytId;
     }
 
-    $ytAPI = 'http://gdata.youtube.com/feeds/api/playlists/'. $playlistId . '?v=2&alt=jsonc&max-results=50&prettyprint=true&start-index=' . $start_index;
+    $ytAPI = 'http://gdata.youtube.com/feeds/api/playlists/'. $playlistId . '?v=2&alt=json&max-results=50&prettyprint=true&start-index=' . $start_index;
     $this->ytData = file_get_contents($ytAPI);
     $this->headers = $http_response_header;
     $this->httpcode = $this->header_code($this->headers);
@@ -173,16 +206,25 @@ class Crawler {
         return $lines;
       }
 
-      $d = json_decode($ytData);
+      $d = json_decode($ytData, true);
 
-      if (!isset($d->data->items)) {
+      if (!isset($d['feed']['entry'])) {
         print_r("FAILED - No Video entry\n");
         return $lines;
       }
 
-      $totalItems = $d->data->totalItems;
+      # save the updateDate for meta
+      if ($start_index == 1) {
+        $this->metaError = false;
+        $this->metaTitle = str_replace("\t", '  ', str_replace("\n", '   ', $d['feed']['title']['$t']));
+        $this->metaThumbnail = $this->get_yt_playlist_thumbnail($d['feed']['media$group']['media$thumbnail'], 'mqdefault');
+        $this->metaDescription = str_replace("\t", '  ', str_replace("\n", '   ', $d['feed']['subtitle']['$t']));
+        $this->metaUpdateDate = strtotime($d['feed']['updated']['$t']);
+      }
 
-      $lines = array_merge($lines, $this->parse_items($d->data->items));
+      $totalItems = $d['feed']['openSearch$totalResults']['$t'];
+
+      $lines = array_merge($lines, $this->parse_items($d['feed']['entry']));
       
       $start_index = $start_index + 50;
     } while ($start_index < 201 and $totalItems >= $start_index);
@@ -229,13 +271,15 @@ class Crawler {
 
     $lines = array();
 
-    foreach ($items as $item) {
+    foreach ($items as $i) {
+      /*** changed to alt=json so there is only one level
       # playlist has one more level 'video'
       if ($type == 'playlist') {
         $i = $item->video;
       } else {
         $i = $item;
       }
+      */
 
 /********* Preserving the unplayable video, let them show up in CMS
 
@@ -261,24 +305,21 @@ class Crawler {
 
 *********/
 
-      if (!isset($i->description)) {
-        $i->description = "";
-      }
-
       $data = array(
         'chId' => $chId,
-        'uploader' => $i->uploader,
+        'uploader' => $i['media$group']['media$credit'][0]['$t'],
         'crawlTime' => $this->crawlTime,
         'id' => $i->id,
         # remove LF and tab
-        'title' => str_replace("\t", '  ', str_replace("\n", '   ', $i->title)),
-        'uploaded' => strtotime($i->uploaded),
-        'duration' => (isset($i->duration) ? $i->duration : 0),
+        'title' => str_replace("\t", '  ', str_replace("\n", '   ', $i['title']['$t'])),
+        'uploaded' => strtotime($i['media$group']['yt$uploaded']['$t']),
+        'duration' => (isset($i['media$group']['yt$duration']['$t']) ? $i['media$group']['yt$duration']['$t'] : 0),
         # use mqDefault as thumbnail, but it is not listed in json, so construct it from sqDefault
-        'thumbnail' => (isset($i->thumbnail->sqDefault) ? str_replace('/default.jpg', '/mqdefault.jpg', $i->thumbnail->sqDefault) : $i->thumbnail->hqDefault),
-        'description' => str_replace("\t", '  ', str_replace("\n", '   ', $i->description)),
-        'state' => (isset($i->status->value) && $i->status->value == 'restricted') ? 'restricted' : 'fine',
-        'reason' => (isset($i->status->reason)) ? $i->status->reason : 'fine'
+        #'thumbnail' => (isset($i->thumbnail->sqDefault) ? str_replace('/default.jpg', '/mqdefault.jpg', $i->thumbnail->sqDefault) : $i->thumbnail->hqDefault),
+        'thumbnail' => $this->get_yt_playlist_thumbnail($i['media$group']['media$thumbnail'], 'mqdefault'),
+        'description' => str_replace("\t", '  ', str_replace("\n", '   ', (isset($i['media$group']['media$description']['$t'])) ? $i['media$group']['media$description']['$t'] : '')),
+        'state' => (isset($i['app$control']['yt$state']['name']) && $i['app$control']['yt$state']['name'] == 'restricted') ? 'restricted' : 'fine',
+        'reason' => (isset($i['app$control']['yt$state']['reasonCode'])) ? $i['app$control']['yt$state']['reasonCode'] : 'fine'
       );
 
       $line = implode("\t", $data);
