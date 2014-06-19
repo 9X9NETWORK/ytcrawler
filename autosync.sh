@@ -6,11 +6,11 @@
 #
 #   ex. (sync 4 times a day)
 #
-#   0 1,6,12 * * * sudo su www-data -c "/var/www/ytcrawler/autosync.sh >> /var/tmp/ytcrawl/autosync.log"
+#   0 1,6,12 * * * sudo su www-data -c "/var/www/ytcrawler/autosync.sh >> /mnt/tmp/ytcrawl/autosync.log"
 #
 
 ytcrawler_dir=$(dirname "$(readlink -f "$0")")
-ytcrawler_tmp="/var/tmp/ytcrawl"
+ytcrawler_tmp="/mnt/tmp/ytcrawl"
 apiserver=$(php -r "include '${ytcrawler_dir}/config.php'; echo \$apiserver;")
 dbhost=$(php -r "include '${ytcrawler_dir}/config.php'; echo \$dbhost;")
 dbuser=$(php -r "include '${ytcrawler_dir}/config.php'; echo \$dbuser;")

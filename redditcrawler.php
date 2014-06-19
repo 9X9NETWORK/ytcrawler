@@ -10,7 +10,7 @@ $r-> run();
 
 echo 'end crawling - ' . date("Y-m-d H:i:s\n");
 
-$log = '/var/tmp/ytcrawl/ytwritter-' . date("Ymd") . '.log';
+$log = '/mnt/tmp/ytcrawl/ytwritter-' . date("Ymd") . '.log';
 #run dbwriter.py in background
 file_put_contents($log, date("Y-m-d H:i:s reddit ch 32585\n"), FILE_APPEND);
 $command = '/usr/bin/python ' . __DIR__ . '/ytwritter.py 32585 >> ' . $log . ' 2>&1 &';
@@ -29,8 +29,8 @@ class Reddit {
 
   public function __construct() {
     $this->channelId = '32585';
-    $this->outFile = '/var/tmp/ytcrawl/whatson.feed.' . $this->channelId . '.txt';
-    $this->metaFile = '/var/tmp/ytcrawl/whatson.meta.' . $this->channelId . '.json';
+    $this->outFile = '/mnt/tmp/ytcrawl/whatson.feed.' . $this->channelId . '.txt';
+    $this->metaFile = '/mnt/tmp/ytcrawl/whatson.meta.' . $this->channelId . '.json';
     $this->redditName = '';
     $this->crawlTime = time();
     $this->ytIds = array();
@@ -43,7 +43,7 @@ class Reddit {
   
     for ($i=1;$i<20;$i++) {
       $json = $this->get_reddit();
-      file_put_contents('/var/tmp/reddit' . $i . '.json', jsonpp($json));
+      file_put_contents('/mnt/tmp/reddit' . $i . '.json', jsonpp($json));
       $this->get_yt_videos($json);
       $j = json_decode($json); if ($j->data->after == Null) {
         echo 'after is null at loop: ' . $i . "\n";
@@ -66,7 +66,7 @@ class Reddit {
     $j['updateDate'] = $this->crawlTime;
     file_put_contents($this->metaFile, json_encode($j));
 
-    #$log = '/var/tmp/ytcrawl/dbwritter-' . date("Ymd") . '.log';
+    #$log = '/mnt/tmp/ytcrawl/dbwritter-' . date("Ymd") . '.log';
     ##run dbwriter.py in background
     #file_put_contents($log, date("Y-m-d H:i:s\n"), FILE_APPEND);
     #$command = '/usr/bin/python ' . __DIR__ . '/dbwritter.py ' . $decoded->id . ' >> ' . $log . ' 2>&1 &';

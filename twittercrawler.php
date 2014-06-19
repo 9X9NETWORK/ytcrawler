@@ -12,7 +12,7 @@ $t->run();
 
 echo 'end crawling - ' . date("Y-m-d H:i:s\n");
 
-$log = '/var/tmp/ytcrawl/ytwritter-' . date("Ymd") . '.log';
+$log = '/mnt/tmp/ytcrawl/ytwritter-' . date("Ymd") . '.log';
 #run dbwriter.py in background
 file_put_contents($log, date("Y-m-d H:i:s twitter ch 32586\n"), FILE_APPEND);
 $command = '/usr/bin/python ' . __DIR__ . '/ytwritter.py 32586 >> ' . $log . ' 2>&1 &';
@@ -32,8 +32,8 @@ class Twitter {
 
   public function __construct() {
     $this->channelId = '32586';
-    $this->outFile = '/var/tmp/ytcrawl/whatson.feed.' . $this->channelId . '.txt';
-    $this->metaFile = '/var/tmp/ytcrawl/whatson.meta.' . $this->channelId . '.json';
+    $this->outFile = '/mnt/tmp/ytcrawl/whatson.feed.' . $this->channelId . '.txt';
+    $this->metaFile = '/mnt/tmp/ytcrawl/whatson.meta.' . $this->channelId . '.json';
     $this->crawlTime = time();
     $this->ytIds = array();
     $this->ytVideos = array();
@@ -75,13 +75,13 @@ class Twitter {
     foreach ($woeids as $w) {
       $trends = $this->get_trending($w);
       # php 5.4
-      # file_put_contents('/var/tmp/trending.json', json_encode(json_decode($trends, true), JSON_PRETTY_PRINT));
-      file_put_contents('/var/tmp/trending_' . $w . '.json', jsonpp($trends));
+      # file_put_contents('/mnt/tmp/trending.json', json_encode(json_decode($trends, true), JSON_PRETTY_PRINT));
+      file_put_contents('/mnt/tmp/trending_' . $w . '.json', jsonpp($trends));
       echo 'Working on ' . $w . "\n";
       $hashtags = $this->get_hashtags($trends);
       foreach ($hashtags as $h) {
         $tweets = $this->get_tweets_by_hashtag($h);
-        file_put_contents('/var/tmp/hashtag_' . $h . '.json', jsonpp($tweets));
+        file_put_contents('/mnt/tmp/hashtag_' . $h . '.json', jsonpp($tweets));
         $this->get_yt_videos($tweets);
       }
       sleep(7);

@@ -45,12 +45,12 @@ dbcontent = MySQLdb.connect (host = dbhost,
 # get channel id
 cId = sys.argv[1]
 
-fileName = '/var/tmp/ytcrawl/ponderosa.feed.' + cId + '.txt'
+fileName = '/mnt/tmp/ytcrawl/ponderosa.feed.' + cId + '.txt'
 response = open(fileName, 'r')
 feed = response.readlines()                  
 response.close()
 
-fileName = '/var/tmp/ytcrawl/ponderosa.meta.' + cId + '.json'
+fileName = '/mnt/tmp/ytcrawl/ponderosa.meta.' + cId + '.json'
 response = open(fileName, 'r')
 meta = json.load(response)
 response.close()

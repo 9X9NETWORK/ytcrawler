@@ -20,9 +20,9 @@ Installation
 
         :::bash
         sudo mkdir /var/www/ytcrawler
-        sudo mkdir /var/tmp/ytcrawl
+        sudo mkdir /mnt/tmp/ytcrawl
         sudo chown ubuntu:ubuntu /var/www/ytcrawler
-        sudo chown www-data:www-data /var/tmp/ytcrawl
+        sudo chown www-data:www-data /mnt/tmp/ytcrawl
 
 2.  pull out source
 
@@ -46,5 +46,5 @@ autosync
 put this line in **crontab** to do youtube sync job periodically
 
     :::cron
-    0 1,6,12 * * * sudo su www-data -c "/var/www/ytcrawler/autosync.sh >> /var/tmp/ytcrawl/autosync.log"
+    0 1,6,12 * * * sudo su www-data -c "/var/www/ytcrawler/autosync.sh >> /mnt/tmp/ytcrawl/autosync.log"
 
