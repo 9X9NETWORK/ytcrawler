@@ -48,6 +48,7 @@ class Crawler {
         $meta['updateDate'] = $this->metaUpdateDate;
 
         $ytAPI = 'http://gdata.youtube.com/feeds/api/users/' . $this->ytId . '?v=2&alt=json&prettyprint=true';
+        #echo $ytAPI . "\n";
         $data = json_decode(file_get_contents($ytAPI), true);
         if ($data == null || !isset($data['entry'])) {
             echo "Invalid youtube channel!";
@@ -77,7 +78,7 @@ class Crawler {
         $meta['description'] = $this->metaDescription;
         $meta['updateDate'] = $this->metaUpdateDate;
       }
-      echo $ytAPI . "\n";
+      #echo $ytAPI . "\n";
     }
     return $meta;
   }
@@ -309,7 +310,7 @@ class Crawler {
         'chId' => $chId,
         'uploader' => $i['media$group']['media$credit'][0]['$t'],
         'crawlTime' => $this->crawlTime,
-        'id' => $i->id,
+        'id' => $i['media$group']['yt$videoid']['$t'],
         # remove LF and tab
         'title' => str_replace("\t", '  ', str_replace("\n", '   ', $i['title']['$t'])),
         'uploaded' => strtotime($i['media$group']['yt$uploaded']['$t']),
