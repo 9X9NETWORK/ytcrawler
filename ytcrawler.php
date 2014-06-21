@@ -41,8 +41,9 @@ $lines = $crl->get_yt_data();
 
 if ($lines == array()) {
   print('WARING - No Update or No Playable Video');
+} else {
+  file_put_contents($outFile, implode("\n", $lines));
 }
-file_put_contents($outFile, implode("\n", $lines));
 
 $meta = $crl->get_yt_meta();
 
