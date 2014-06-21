@@ -182,6 +182,14 @@ class Crawler {
         if (isset($d['feed']['entry'][0]['published']['$t'])) {
           $this->metaError = false;
           $this->metaUpdateDate = strtotime($d['feed']['entry'][0]['published']['$t']);
+          # compare updateDate with pervious meta data
+          $oldMeta = json_decode($this->metaPrevious);
+          if ($oldMeta->updateDate >= $this->metaUpdateDate) {
+            # No need to update the feed.  No further call to youtube
+            $lines = array();
+            echo "No update to channel\n";
+            return $lines;
+          }
         }
       }
 
@@ -246,6 +254,14 @@ class Crawler {
         $this->metaThumbnail = $this->get_yt_playlist_thumbnail($d['feed']['media$group']['media$thumbnail'], 'mqdefault');
         $this->metaDescription = str_replace("\t", '  ', str_replace("\n", '   ', $d['feed']['subtitle']['$t']));
         $this->metaUpdateDate = strtotime($d['feed']['updated']['$t']);
+        # compare updateDate with pervious meta data
+        $oldMeta = json_decode($this->metaPrevious);
+        if ($oldMeta->updateDate >= $this->metaUpdateDate) {
+          # No need to update the feed.  No further call to youtube
+          $lines = array();
+          echo "No update to playlist\n";
+          return $lines;
+        }
       }
 
       $totalItems = $d['feed']['openSearch$totalResults']['$t'];
