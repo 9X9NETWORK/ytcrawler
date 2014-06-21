@@ -9,6 +9,7 @@ class Crawler {
   public $ytUrl;
   public $ytType;
   public $ytId;
+  public $metaPrevious = '';
   public $metaTitle = '';
   public $metaThumbnail = '';
   public $metaDescription = '';
@@ -35,51 +36,60 @@ class Crawler {
     $meta = Array('title'=>'', 'description'=>'', 'thumbnail'=>'', 'updateDate'=>'');
     if ($this->metaError) {
       $meta['error'] = true;
-    } else {
-      if ($this->ytType == 'channel') {
-        # use the data from get_yt_data to avoid duplicated call to youtube
-        /*
-        $ytAPI = 'http://gdata.youtube.com/feeds/api/users/' . $this->ytId . '/uploads?v=2&alt=json&prettyprint=true&max-results=1';
-        $data = json_decode(file_get_contents($ytAPI), true);
-        if ($data != null && isset($data['feed']['entry'][0])) {
-            $meta['updateDate'] = strtotime($data['feed']['entry'][0]['published']['$t']);
-        }
-        */
-        $meta['updateDate'] = $this->metaUpdateDate;
-
-        $ytAPI = 'http://gdata.youtube.com/feeds/api/users/' . $this->ytId . '?v=2&alt=json&prettyprint=true';
-        #echo $ytAPI . "\n";
-        $data = json_decode(file_get_contents($ytAPI), true);
-        if ($data == null || !isset($data['entry'])) {
-            echo "Invalid youtube channel!";
-            $meta['error'] = true;
-        } else {
-            $meta['title'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['entry']['title']['$t']));
-            $meta['thumbnail'] = $data['entry']['media$thumbnail']['url'];
-            $meta['description'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['entry']['summary']['$t']));
-        }
-      } else if ($this->ytType == 'playlist') {
-        # use the data from get_yt_data to avoid duplicated call to youtube
-        /*
-        $ytAPI = 'http://gdata.youtube.com/feeds/api/playlists/' . $this->ytId . '?v=2&alt=json&prettyprint=true&max-results=1';
-        $data = json_decode(file_get_contents($ytAPI), true);
-        if ($data == null || !isset($data['feed'])) {
-            echo "Invalid playlist!";
-            $meta['error'] = true;
-        } else {
-            $meta['title'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['feed']['title']['$t']));
-            $meta['thumbnail'] = $this->get_yt_playlist_thumbnail($data['feed']['media$group']['media$thumbnail']);
-            $meta['description'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['feed']['subtitle']['$t']));
-            $meta['updateDate'] = strtotime($data['feed']['updated']['$t']);
-        }
-        */
-        $meta['title'] = $this->metaTitle;
-        $meta['thumbnail'] = $this->metaThumbnail;
-        $meta['description'] = $this->metaDescription;
-        $meta['updateDate'] = $this->metaUpdateDate;
-      }
-      #echo $ytAPI . "\n";
+      return $meta;
     }
+
+    if ($this->ytType == 'channel') {
+      
+      # use the data from get_yt_data to avoid duplicated call to youtube
+      $meta['updateDate'] = $this->metaUpdateDate;
+
+      # check if there is update to channel
+      if ($this->metaPrevious != '') {
+        $oldMeta = json_decode($this->metaPrevious);
+        if ($oldMeta->updateDate >= $this->metaUpdateDate) {
+          # if no update, use previous meta
+          $meta['title'] = $oldMeta->title;
+          $meta['thumbnail'] = $oldMeta->thumbnail;
+          $meta['description'] = $oldMeta->description;
+          return $meta;
+        }
+      } 
+
+      # call youtube to get new channel meta
+      $ytAPI = 'http://gdata.youtube.com/feeds/api/users/' . $this->ytId . '?v=2&alt=json&prettyprint=true';
+      echo $ytAPI . "\n";
+      $data = json_decode(file_get_contents($ytAPI), true);
+      if ($data == null || !isset($data['entry'])) {
+          echo "Invalid youtube channel!";
+          $meta['error'] = true;
+      } else {
+          $meta['title'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['entry']['title']['$t']));
+          $meta['thumbnail'] = $data['entry']['media$thumbnail']['url'];
+          $meta['description'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['entry']['summary']['$t']));
+      }
+    } else if ($this->ytType == 'playlist') {
+      /*
+      $ytAPI = 'http://gdata.youtube.com/feeds/api/playlists/' . $this->ytId . '?v=2&alt=json&prettyprint=true&max-results=1';
+      $data = json_decode(file_get_contents($ytAPI), true);
+      if ($data == null || !isset($data['feed'])) {
+          echo "Invalid playlist!";
+          $meta['error'] = true;
+      } else {
+          $meta['title'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['feed']['title']['$t']));
+          $meta['thumbnail'] = $this->get_yt_playlist_thumbnail($data['feed']['media$group']['media$thumbnail']);
+          $meta['description'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['feed']['subtitle']['$t']));
+          $meta['updateDate'] = strtotime($data['feed']['updated']['$t']);
+      }
+      */
+
+      # use the data from get_yt_data to avoid duplicated call to youtube
+      $meta['title'] = $this->metaTitle;
+      $meta['thumbnail'] = $this->metaThumbnail;
+      $meta['description'] = $this->metaDescription;
+      $meta['updateDate'] = $this->metaUpdateDate;
+    }
+      #echo $ytAPI . "\n";
     return $meta;
   }
 
@@ -151,6 +161,9 @@ class Crawler {
       $ytData = $this->get_yt_channel($username, $start_index);
       if ($this->httpcode != '200') {
         print_r('FAILED - httpcode: ' . $this->httpcode . ' data: ' . print_r($ytData,true));
+        if ($lines == array()) {
+          $this->metaError = true;
+        }
         return $lines;
       }
 
@@ -158,6 +171,9 @@ class Crawler {
 
       if (!isset($d['feed']['entry'])) {
         print_r("FAILED - No Video entry\n");
+        if ($lines == array()) {
+          $this->metaError = true;
+        }
         return $lines;
       }
 
@@ -177,6 +193,9 @@ class Crawler {
       # limit 200 videos per channel
     } while ($start_index < 201 and $totalItems >= $start_index);
 
+    if ($lines == array()) {
+      $this->metaError = true;
+    }
     return $lines;
   }
 
@@ -204,6 +223,9 @@ class Crawler {
       $ytData = $this->get_yt_playlist($playlistId, $start_index);
       if ($this->httpcode != '200') {
         print_r('FAILED - httpcode: ' . $this->httpcode . ' data: ' . print_r($ytData,true));
+        if ($lines == array()) {
+          $this->metaError = true;
+        }
         return $lines;
       }
 
@@ -211,6 +233,9 @@ class Crawler {
 
       if (!isset($d['feed']['entry'])) {
         print_r("FAILED - No Video entry\n");
+        if ($lines == array()) {
+          $this->metaError = true;
+        }
         return $lines;
       }
 
@@ -230,6 +255,9 @@ class Crawler {
       $start_index = $start_index + 50;
     } while ($start_index < 201 and $totalItems >= $start_index);
 
+    if ($lines == array()) {
+      $this->metaError = true;
+    }
     return $lines;
 
   }

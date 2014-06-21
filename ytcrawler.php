@@ -30,6 +30,11 @@ if ($crl->ytId == '') {
   die('FAILED - Wrong sourceUrl: '. $decoded->sourceUrl . "\n");
 }
 
+# retrieve old meta data in order to find out if channel got updated or not
+if (file_exists($metaFile)) {
+  $crl->metaPrevious = file_get_contents($metaFile);
+}
+
 echo 'ytcrawl for ' . $crl->ytId . "\n";
 
 $lines = $crl->get_yt_data();
