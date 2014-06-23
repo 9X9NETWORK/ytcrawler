@@ -358,7 +358,7 @@ class Crawler {
         # remove LF and tab
         'title' => str_replace("\t", '  ', str_replace("\n", '   ', $i['title']['$t'])),
         'uploaded' => strtotime($i['media$group']['yt$uploaded']['$t']),
-        'duration' => (isset($i['media$group']['yt$duration']['$t']) ? $i['media$group']['yt$duration']['$t'] : 0),
+        'duration' => (isset($i['media$group']['yt$duration']['seconds']) ? $i['media$group']['yt$duration']['seconds'] : 0),
         # use mqDefault as thumbnail, but it is not listed in json, so construct it from sqDefault
         #'thumbnail' => (isset($i->thumbnail->sqDefault) ? str_replace('/default.jpg', '/mqdefault.jpg', $i->thumbnail->sqDefault) : $i->thumbnail->hqDefault),
         'thumbnail' => $this->get_yt_playlist_thumbnail($i['media$group']['media$thumbnail'], 'mqdefault'),
