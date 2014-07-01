@@ -128,12 +128,13 @@ for d in data:
   fileUrl = d[2]
   dbDic[fileUrl] = fileUrl
   obj = textDic.get(fileUrl, 'empty')
-  if obj == 'empty':
-     print "unattach nnepisode from nnchannel: " + str(eId)
-     cursor.execute("""update nnepisode set channelId = 0, adId = %s where id = %s
-        """, (cId, eId)) 
-     cursor.execute("""update nnprogram set channelId = 0 where episodeId = %s
-        """, (eId)) 
+  #for now it's more likely it's bad return from youtube, commet out the unattach action
+  #if obj == 'empty':
+  #   print "unattach nnepisode from nnchannel: " + str(eId)
+  #   cursor.execute("""update nnepisode set channelId = 0, adId = %s where id = %s
+  #      """, (cId, eId)) 
+  #   cursor.execute("""update nnprogram set channelId = 0 where episodeId = %s
+  #      """, (eId)) 
      
 # parsing episode
 print "-- parsing text --"
