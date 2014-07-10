@@ -53,7 +53,7 @@ $log = '/mnt/tmp/ytcrawl/dbwritter-' . date("Ymd") . '.log';
 #run dbwriter.py in background
 file_put_contents($log, date("Y-m-d H:i:s\n"), FILE_APPEND);
 $command = '/usr/bin/python ' . __DIR__ . '/dbwritter.py ' . $decoded->id . ' >> ' . $log . ' 2>&1 &';
-#$ret = shell_exec($command);
+$ret = shell_exec($command);
 #header('Connection: Close');
 #die('OK');
 
