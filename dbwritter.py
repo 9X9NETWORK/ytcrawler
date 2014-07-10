@@ -45,25 +45,45 @@ dbcontent = MySQLdb.connect (host = dbhost,
 # get channel id
 cId = sys.argv[1]
 
-fileName = '/mnt/tmp/ytcrawl/ponderosa.feed.' + cId + '.txt'
-response = open(fileName, 'r')
-feed = response.readlines()                  
-response.close()
+#read meta and episode data
+try:
+   fileName = '/mnt/tmp/ytcrawl/ponderosa.meta.' + cId + '.json'
+   response = open(fileName, 'r')
+   meta = json.load(response)
+   response.close()
+   chUpdateDate = meta['updateDate']
+   chError = meta['error']
+except IOError, e:
+   chError = "NoFile"
+except KeyError, e:
+   chError = "OK"
 
-fileName = '/mnt/tmp/ytcrawl/ponderosa.meta.' + cId + '.json'
-response = open(fileName, 'r')
-meta = json.load(response)
-response.close()
+try:
+   fileName = '/mnt/tmp/ytcrawl/ponderosa.feed.' + cId + '.txt'
+   response = open(fileName, 'r')
+   feed = response.readlines()
+   response.close()
+except IOError, e:
+   chError == "NoFile"
+
+if chError == True:
+   chError = "Error"
+if chError == None:
+   chError = "OK"
+print "Info: chError," + str(chError)
+
+if chError == "NoUpdate":
+   print "Info: no update, exit"
+   exit()
+if chError == "Timeout":
+   print "Info: timeout, exit"
+   exit()
+if chError == "Non2xx":
+   print "Info: non2xx, exit"
+   exit()
 
 cursor = dbcontent.cursor()
-
-chUpdateDate = meta['updateDate']
-if 'error' in meta:
-    chError = meta['error']
-else:
-    chError = None
-
-if (chError is not None):
+if (chError != "OK" and chError != "Empty"):
     cursor.execute("""
                    update nnchannel_pref set value = 'failed'
                    where channelId = %s and item = 'auto-sync'
@@ -72,11 +92,12 @@ if (chError is not None):
                    update nnchannel set readonly = false where id = %s
                    """, (cId))
     dbcontent.commit()  
-    cursor.close ()
+    cursor.close()
     print "Warning: invalid playlist! (" + str(cId) + ")"
     sys.exit(0) 
 else:
     # bring it back to live
+    print "Info: back to live"
     cursor.execute("""
                    update nnchannel_pref set value = 'off'
                    where channelId = %s and item = 'auto-sync' and value = 'failed'
@@ -92,10 +113,10 @@ cursor.execute("""
 ch_row = cursor.fetchone()
 if ch_row is not None:
     ch_updateDate = ch_row[0]
-    print "-- check update time --"
+    print "Info: -- check update time --"
     if (chUpdateDate != ''): # YouTube-playlist follow playlist's update time
        baseTimestamp = chUpdateDate
-    print "original channel time: " + str(ch_updateDate) + "; time from youtube video: " + str(baseTimestamp)
+    print "Info: original channel time: " + str(ch_updateDate) + "; time from youtube video: " + str(baseTimestamp)
     if (baseTimestamp != 0):
        cursor.execute("""
             update nnchannel set updateDate = from_unixtime(%s) 
@@ -104,6 +125,16 @@ if ch_row is not None:
 else:
     print "Fatal: invalid channelId"
     sys.exit(0) 
+
+if chError == "Empty":
+   cursor.execute("""delete from nnepisode where channelId = %s
+        """, (cId))
+   cursor.execute("""delete from nnprogram where channelId = %s
+        """, (cId))
+   print "Warning: empty, deleting all the nnepisodes and nnprograms and exit"
+   dbcontent.commit()
+   cursor.close()
+   exit()
 
 # read things to dic
 textDic = {}
@@ -128,13 +159,12 @@ for d in data:
   fileUrl = d[2]
   dbDic[fileUrl] = fileUrl
   obj = textDic.get(fileUrl, 'empty')
-  #for now it's more likely it's bad return from youtube, commet out the unattach action
-  #if obj == 'empty':
-  #   print "unattach nnepisode from nnchannel: " + str(eId)
-  #   cursor.execute("""update nnepisode set channelId = 0, adId = %s where id = %s
-  #      """, (cId, eId)) 
-  #   cursor.execute("""update nnprogram set channelId = 0 where episodeId = %s
-  #      """, (eId)) 
+  if obj == 'empty':
+     print "unattach nnepisode from nnchannel: " + str(eId)
+     cursor.execute("""update nnepisode set channelId = 0, adId = %s where id = %s
+        """, (cId, eId)) 
+     cursor.execute("""update nnprogram set channelId = 0 where episodeId = %s
+        """, (eId)) 
      
 # parsing episode
 print "-- parsing text --"
