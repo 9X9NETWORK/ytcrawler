@@ -64,13 +64,6 @@ class Crawler {
       $ret = file_get_contents($ytAPI);
       $headers = $http_response_header;
 
-      if ($ret === false) {
-        #timeout or other failure
-        echo "WARNING - get_yt_meta: file_get_contents timed out or other failure\n";
-        $meta['error'] = 'Timeout';
-        return $meta;
-      }
-
       $httpcode = $this->header_code($headers);
 
       if ($httpcode != '200') {
@@ -80,6 +73,13 @@ class Crawler {
         } else {
           $meta['error'] = 'Non2xx';
         }
+        return $meta;
+      }
+
+      if ($ret === false) {
+        #timeout or other failure
+        echo "WARNING - get_yt_meta: file_get_contents timed out or other failure\n";
+        $meta['error'] = 'Timeout';
         return $meta;
       }
 
@@ -185,16 +185,6 @@ class Crawler {
     do {
       $ytData = $this->get_yt_channel($username, $start_index);
 
-      if ($ytData === false) {
-        # timed out or other failure
-        echo "FAILED - get_yt_channel: file_get_contents timed out or other failure\n";
-        if ($lines == array()) {
-          $this->metaError = 'Timeout';
-          echo "FAILED - get_yt_channel_all: file_get_contents timed out or other failure\n";
-        }
-        return $lines;
-      }
-
       if ($this->httpcode != '200') {
         echo 'FAILED - httpcode: ' . $this->httpcode . ' data: ' . $ytData . "\n";
         if ($lines == array()) {
@@ -204,6 +194,16 @@ class Crawler {
           } else {
             $this->metaError = 'Non2xx';
           }
+        }
+        return $lines;
+      }
+
+      if ($ytData === false) {
+        # timed out or other failure
+        echo "FAILED - get_yt_channel: file_get_contents timed out or other failure\n";
+        if ($lines == array()) {
+          $this->metaError = 'Timeout';
+          echo "FAILED - get_yt_channel_all: file_get_contents timed out or other failure\n";
         }
         return $lines;
       }
@@ -275,16 +275,6 @@ class Crawler {
     do {
       $ytData = $this->get_yt_playlist($playlistId, $start_index);
 
-      if ($ytData === false) {
-        # timed out or other failure
-        echo "FAILED - get_yt_playlist: file_get_contents timed out or other failure\n";
-        if ($lines == array()) {
-          $this->metaError = 'Timeout';
-          echo "FAILED - get_yt_playlist_all: file_get_contents timed out or other failure\n";
-        }
-        return $lines;
-      }
-
       if ($this->httpcode != '200') {
         echo 'FAILED - httpcode: ' . $this->httpcode . ' data: ' . $ytData . "\n";
         if ($lines == array()) {
@@ -294,6 +284,16 @@ class Crawler {
           } else {
             $this->metaError = 'Non2xx';
           }
+        }
+        return $lines;
+      }
+
+      if ($ytData === false) {
+        # timed out or other failure
+        echo "FAILED - get_yt_playlist: file_get_contents timed out or other failure\n";
+        if ($lines == array()) {
+          $this->metaError = 'Timeout';
+          echo "FAILED - get_yt_playlist_all: file_get_contents timed out or other failure\n";
         }
         return $lines;
       }
