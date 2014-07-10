@@ -15,7 +15,7 @@ class Crawler {
   public $metaDescription = '';
   public $metaUpdateDate = '';
 
-  public $metaError = true;
+  public $metaError = 'OK';
 
   public function __construct($chId, $url) {
     $this->crawlTime = time();
@@ -33,9 +33,11 @@ class Crawler {
   }
 
   public function get_yt_meta() {
+    // have to run get_yt_data first as some meta data from get_yt_data
     $meta = Array('title'=>'', 'description'=>'', 'thumbnail'=>'', 'updateDate'=>'');
-    if ($this->metaError) {
-      $meta['error'] = true;
+    $meta['error'] = $this->metaError;
+
+    if ($this->metaError != 'OK') {
       return $meta;
     }
 
@@ -59,15 +61,38 @@ class Crawler {
       # call youtube to get new channel meta
       $ytAPI = 'http://gdata.youtube.com/feeds/api/users/' . $this->ytId . '?v=2&alt=json&prettyprint=true';
       echo $ytAPI . "\n";
-      $data = json_decode(file_get_contents($ytAPI), true);
+      $ret = file_get_contents($ytAPI);
+      $headers = $http_response_header;
+
+      if ($ret === false) {
+        #timeout or other failure
+        echo "WARNING - get_yt_meta: file_get_contents timed out or other failure\n";
+        $meta['error'] = 'Timeout';
+        return $meta;
+      }
+
+      $httpcode = $this->header_code($headers);
+
+      if ($httpcode != '200') {
+        echo 'FAILED - get_yt_meta: httpcode: ' . $httpcode . ' data: ' . $ret . "\n";
+        if ($httpcode == 404) {
+          $meta['error'] = 'NotFound';
+        } else {
+          $meta['error'] = 'Non2xx';
+        }
+        return $meta;
+      }
+
+      $data = json_decode($ret, true);
       if ($data == null || !isset($data['entry'])) {
-          echo "Invalid youtube channel!";
-          $meta['error'] = true;
+          echo "FAILED - get_yt_meta: Invalid youtube channel!\n";
+          $meta['error'] = 'Invalid';
       } else {
           $meta['title'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['entry']['title']['$t']));
           $meta['thumbnail'] = $data['entry']['media$thumbnail']['url'];
           $meta['description'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['entry']['summary']['$t']));
       }
+
     } else if ($this->ytType == 'playlist') {
       /*
       $ytAPI = 'http://gdata.youtube.com/feeds/api/playlists/' . $this->ytId . '?v=2&alt=json&prettyprint=true&max-results=1';
@@ -159,10 +184,26 @@ class Crawler {
 
     do {
       $ytData = $this->get_yt_channel($username, $start_index);
-      if ($this->httpcode != '200') {
-        print_r('FAILED - httpcode: ' . $this->httpcode . ' data: ' . print_r($ytData,true));
+
+      if ($ytData === false) {
+        # timed out or other failure
+        echo "FAILED - get_yt_channel: file_get_contents timed out or other failure\n";
         if ($lines == array()) {
-          $this->metaError = true;
+          $this->metaError = 'Timeout';
+          echo "FAILED - get_yt_channel_all: file_get_contents timed out or other failure\n";
+        }
+        return $lines;
+      }
+
+      if ($this->httpcode != '200') {
+        echo 'FAILED - httpcode: ' . $this->httpcode . ' data: ' . $ytData . "\n";
+        if ($lines == array()) {
+          echo "FAILED - get_yt_channel_all: non 200 returned\n";
+          if ($this->httpcode == 404) {
+            $this->metaError = 'NotFound';
+          } else {
+            $this->metaError = 'Non2xx';
+          }
         }
         return $lines;
       }
@@ -170,9 +211,9 @@ class Crawler {
       $d = json_decode($ytData, true);
 
       if (!isset($d['feed']['entry'])) {
-        print_r("FAILED - No Video entry\n");
         if ($lines == array()) {
-          $this->metaError = true;
+          $this->metaError = 'Empty';
+          echo "WARNING - get_yt_channel_all: No Video entry\n";
         }
         return $lines;
       }
@@ -180,7 +221,7 @@ class Crawler {
       # save the updateDate for meta
       if ($start_index == 1 ) {
         if (isset($d['feed']['entry'][0]['published']['$t'])) {
-          $this->metaError = false;
+          $this->metaError = 'OK';
           $this->metaUpdateDate = strtotime($d['feed']['entry'][0]['published']['$t']);
           if ($this->metaPrevious != '') {
             # compare updateDate with pervious meta data
@@ -189,6 +230,7 @@ class Crawler {
               # No need to update the feed.  No further call to youtube
               $lines = array();
               echo "No update to channel\n";
+              $this->metaError = 'NoUpdate';
               return $lines;
             }
           }
@@ -204,7 +246,8 @@ class Crawler {
     } while ($start_index < 201 and $totalItems >= $start_index);
 
     if ($lines == array()) {
-      $this->metaError = true;
+      $this->metaError = 'Empty';
+      echo "WARNING: Empty channel\n";
     }
     return $lines;
   }
@@ -231,10 +274,26 @@ class Crawler {
 
     do {
       $ytData = $this->get_yt_playlist($playlistId, $start_index);
-      if ($this->httpcode != '200') {
-        print_r('FAILED - httpcode: ' . $this->httpcode . ' data: ' . print_r($ytData,true));
+
+      if ($ytData === false) {
+        # timed out or other failure
+        echo "FAILED - get_yt_playlist: file_get_contents timed out or other failure\n";
         if ($lines == array()) {
-          $this->metaError = true;
+          $this->metaError = 'Timeout';
+          echo "FAILED - get_yt_playlist_all: file_get_contents timed out or other failure\n";
+        }
+        return $lines;
+      }
+
+      if ($this->httpcode != '200') {
+        echo 'FAILED - httpcode: ' . $this->httpcode . ' data: ' . $ytData . "\n";
+        if ($lines == array()) {
+          echo "FAILED - get_yt_playlist_all: non 200 returned\n";
+          if ($this->httpcode == 404) {
+            $this->metaError = 'NotFound';
+          } else {
+            $this->metaError = 'Non2xx';
+          }
         }
         return $lines;
       }
@@ -242,16 +301,17 @@ class Crawler {
       $d = json_decode($ytData, true);
 
       if (!isset($d['feed']['entry'])) {
-        print_r("FAILED - No Video entry\n");
+        echo "WARNING - No Video entry\n";
         if ($lines == array()) {
-          $this->metaError = true;
+          $this->metaError = 'Empty';
+          echo "WARNING - get_yt_playlist_all: empty playlist\n";
         }
         return $lines;
       }
 
       # save the updateDate for meta
       if ($start_index == 1) {
-        $this->metaError = false;
+        $this->metaError = 'OK';
         $this->metaTitle = str_replace("\t", '  ', str_replace("\n", '   ', $d['feed']['title']['$t']));
         $this->metaThumbnail = $this->get_yt_playlist_thumbnail($d['feed']['media$group']['media$thumbnail'], 'mqdefault');
         $this->metaDescription = str_replace("\t", '  ', str_replace("\n", '   ', $d['feed']['subtitle']['$t']));
@@ -262,6 +322,7 @@ class Crawler {
           if ($this->metaUpdateDate != 0 and $oldMeta->updateDate >= $this->metaUpdateDate) {
             # No need to update the feed.  No further call to youtube
             $lines = array();
+            $this->metaError = 'NoUpdate';
             echo "No update to playlist\n";
             return $lines;
           }
@@ -276,7 +337,8 @@ class Crawler {
     } while ($start_index < 201 and $totalItems >= $start_index);
 
     if ($lines == array()) {
-      $this->metaError = true;
+      $this->metaError = 'Empty';
+      echo "WARNING - empty playlist\n";
     }
     return $lines;
 
