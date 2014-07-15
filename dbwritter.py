@@ -161,7 +161,7 @@ for d in data:
   obj = textDic.get(fileUrl, 'empty')
   if obj == 'empty':
      print "unattach nnepisode from nnchannel: " + str(eId)
-     cursor.execute("""update nnepisode set channelId = 0, adId = %s where id = %s
+     cursor.execute("""update nnepisode set channelId = 0, storageId = %s where id = %s
         """, (cId, eId)) 
      cursor.execute("""update nnprogram set channelId = 0 where episodeId = %s
         """, (eId)) 
