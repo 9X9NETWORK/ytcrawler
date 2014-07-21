@@ -48,6 +48,19 @@ for ch in $chlist; do
     sleep 1
 done
 
+curl "http://www.flipr.tv/wd/programCache?channel=35551"
+curl "http://www.flipr.tv/wd/programCache?channel=35552"
+curl "http://www.flipr.tv/wd/programCache?channel=35553"
+curl "http://www.flipr.tv/wd/programCache?channel=35554"
+curl "http://www.flipr.tv/wd/programCache?channel=35555"
+curl "http://www.flipr.tv/wd/programCache?channel=35556"
+curl "http://www.flipr.tv/wd/programCache?channel=35557"
+curl "http://www.flipr.tv/wd/programCache?channel=35558"
+curl "http://www.flipr.tv/wd/programCache?channel=35559"
+curl "http://www.flipr.tv/wd/programCache?channel=35560"
+curl "http://www.flipr.tv/wd/programCache?channel=35561"
+curl "http://www.flipr.tv/wd/programCache?channel=35562"
+
 echo
 echo "autosync finished at $(date)"
 echo
