@@ -72,36 +72,46 @@ if chError == None:
    chError = "OK"
 print "Info: chError," + str(chError)
 
-if chError == "NoUpdate":
-   print "Info: no update, exit"
-   exit()
+cursor = dbcontent.cursor()
+# always dismiss read-only status
+cursor.execute("""
+               update nnchannel set readonly = false where id = %s
+               """, (cId))
+
 if chError == "Timeout":
    print "Info: timeout, exit"
-   exit()
-if chError == "Non2xx":
-   print "Info: non2xx, exit"
+   dbcontent.commit()  
+   cursor.close()
    exit()
 
-cursor = dbcontent.cursor()
-if (chError != "OK" and chError != "Empty"):
+if chError == "Non2xx":
+   print "Info: non2xx, exit"
+   dbcontent.commit()  
+   cursor.close()
+   exit()
+
+if (chError != "OK" and chError != "Empty" and chError != "NoUpdate"):
     cursor.execute("""
                    update nnchannel_pref set value = 'failed'
                    where channelId = %s and item = 'auto-sync'
-                   """, (cId))
-    cursor.execute("""
-                   update nnchannel set readonly = false where id = %s
                    """, (cId))
     dbcontent.commit()  
     cursor.close()
     print "Warning: invalid playlist! (" + str(cId) + ")"
     sys.exit(0) 
-else:
-    # bring it back to live
-    print "Info: back to live"
-    cursor.execute("""
-                   update nnchannel_pref set value = 'off'
-                   where channelId = %s and item = 'auto-sync' and value = 'failed'
-                   """, (cId))
+
+# bring it back to live
+print "Info: back to live"
+cursor.execute("""
+               update nnchannel_pref set value = 'off'
+               where channelId = %s and item = 'auto-sync' and value = 'failed'
+               """, (cId))
+
+if chError == "NoUpdate":
+   print "Info: no update"
+   dbcontent.commit()  
+   cursor.close()
+   exit()
 
 # ch updateDate check
 # for YouTube-channel follow newest video time, for YouTube-playlist follow playlist's update time
