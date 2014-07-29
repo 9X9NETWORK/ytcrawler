@@ -91,6 +91,7 @@ if chError == "Non2xx":
    exit()
 
 if (chError != "OK" and chError != "Empty" and chError != "NoUpdate"):
+    #Invalid, NotFound, Forbidden enters here
     cursor.execute("""
                    update nnchannel_pref set value = 'failed'
                    where channelId = %s and item = 'auto-sync'
