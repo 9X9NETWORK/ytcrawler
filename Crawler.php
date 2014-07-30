@@ -70,6 +70,8 @@ class Crawler {
         echo 'FAILED - get_yt_meta: httpcode: ' . $httpcode . ' data: ' . $ret . "\n";
         if ($httpcode == 404) {
           $meta['error'] = 'NotFound';
+        } elseif ($httpcode == 403) {
+          $meta['error'] = 'Forbidden';
         } else {
           $meta['error'] = 'Non2xx';
         }
@@ -191,6 +193,8 @@ class Crawler {
           echo "FAILED - get_yt_channel_all: non 200 returned\n";
           if ($this->httpcode == 404) {
             $this->metaError = 'NotFound';
+          } elseif ($this->httpcode == 403) {
+            $this->metaError = 'Forbidden';
           } else {
             $this->metaError = 'Non2xx';
           }
@@ -281,6 +285,8 @@ class Crawler {
           echo "FAILED - get_yt_playlist_all: non 200 returned\n";
           if ($this->httpcode == 404) {
             $this->metaError = 'NotFound';
+          } elseif ($this->httpcode == 403) {
+            $this->metaError = 'Forbidden';
           } else {
             $this->metaError = 'Non2xx';
           }
