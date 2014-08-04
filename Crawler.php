@@ -14,6 +14,7 @@ class Crawler {
   public $metaThumbnail = '';
   public $metaDescription = '';
   public $metaUpdateDate = '';
+  public $fbAccessToken = '110847978946712|i47zynWykCO0V1zjJz_BXc6EIXY';
 
   public $metaError = 'OK';
 
@@ -358,6 +359,7 @@ class Crawler {
     #http://www.youtube.com/user/angularjs
     #http://www.youtube.com/view_play_list?p=91bbccf65ce3d190
     $pattern = '@.+www.youtube.com(/user/|/view_play_list\?p=)(.+)$@';
+    $fbPattern = '@^https?:\/\/graph\.facebook\.com\/([:alnum:]+)@';
     if (preg_match($pattern, $url, $matches)) {
       #print_r($matches);
       $this->ytId = $matches[2];
@@ -366,6 +368,9 @@ class Crawler {
       } else {
         $this->ytType = 'playlist';
       }
+    } else if (preg_match($fbPattern, $url, $matches)) {
+      $this->ytType = 'facebook';
+      $this->ytId = $matches[1];
     } else {
       $this->ytType = 'unknown';
       $this->ytId = '';
