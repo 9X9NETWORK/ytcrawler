@@ -116,6 +116,44 @@ class Crawler {
       $meta['thumbnail'] = $this->metaThumbnail;
       $meta['description'] = $this->metaDescription;
       $meta['updateDate'] = $this->metaUpdateDate;
+
+    } else if ($this->ytType == 'facebook') {
+
+      # call facebook to get new channel meta
+      $fbAPI = 'https://graph.facebook.com/' . $this->ytId;
+      echo $fbAPI . "\n";
+      $ret = file_get_contents($fbAPI);
+      $headers = $http_response_header;
+      $httpcode = $this->header_code($headers);
+
+      if ($httpcode != '200') {
+        echo 'FAILED - get_fb_meta: httpcode: ' . $httpcode . ' data: ' . $ret . "\n";
+        if ($httpcode == 404) {
+          $meta['error'] = 'NotFound';
+        } elseif ($httpcode == 403) {
+          $meta['error'] = 'Forbidden';
+        } else {
+          $meta['error'] = 'Non2xx';
+        }
+        return $meta;
+      }
+
+      if ($ret === false) {
+        #timeout or other failure
+        echo "WARNING - get_fb_meta: file_get_contents timed out or other failure\n";
+        $meta['error'] = 'Timeout';
+        return $meta;
+      }
+
+      $data = json_decode($ret, true);
+      if ($data == null || !isset($data['id'])) {
+          echo "FAILED - get_fb_meta: Invalid facebook feed!\n";
+          $meta['error'] = 'Invalid';
+      } else {
+          $meta['title'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['name']));
+          $meta['thumbnail'] = "http://graph.facebook.com/${data['id']}/picture?type=large";
+          $meta['description'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['description']));
+      }
     }
       #echo $ytAPI . "\n";
     return $meta;
@@ -156,10 +194,12 @@ class Crawler {
   }
 
   public function get_yt_data() {
-    if ($this->ytType  == 'channel') {
+    if ($this->ytType == 'channel') {
       return $this->get_yt_channel_all($this->ytId);
-    } elseif ($this->ytType  == 'playlist') {
+    } else if ($this->ytType == 'playlist') {
       return $this->get_yt_playlist_all($this->ytId);
+    } else if ($this->ytType == 'facebook') {
+      return $this->get_fb_feed_all($this->ytId);
     } else {
       return null;
     }
@@ -175,6 +215,65 @@ class Crawler {
     $this->headers = $http_response_header;
     $this->httpcode = $this->header_code($this->headers);
     return $this->ytData;
+  }
+
+  public function get_fb_feed($fbId) {
+    
+    $this->ytData = file_get_contents("https://graph.facebook.com/v2.0/$fbId/feed?access_token=$this->fbAccessToken");
+    $this->headers = $http_response_header;
+    $this->httpcode = $this->header_code($this->headers);
+    return $this->ytData;
+  }
+
+  public function get_fb_feed_all($fbId) {
+
+    $lines = array();
+    
+    $fbData = $this->get_fb_feed($fbId);
+
+    if ($this->httpcode != '200') {
+      echo 'FAILED - httpcode: ' . $this->httpcode . ' data: ' . $fbData . "\n";
+      if ($lines == array()) {
+        echo "FAILED - get_fb_feed_all: non 200 returned\n";
+        if ($this->httpcode == 404) {
+          $this->metaError = 'NotFound';
+        } elseif ($this->httpcode == 403) {
+          $this->metaError = 'Forbidden';
+        } else {
+          $this->metaError = 'Non2xx';
+        }
+      }
+      return $lines;
+    }
+
+    if ($fbData === false) {
+      # timed out or other failure
+      echo "FAILED - get_fb_feed: file_get_contents timed out or other failure\n";
+      if ($lines == array()) {
+        $this->metaError = 'Timeout';
+        echo "FAILED - get_fb_feed_all: file_get_contents timed out or other failure\n";
+      }
+      return $lines;
+    }
+
+    $d = json_decode($fbData, true);
+
+    if (empty($d['data'])) {
+      if ($lines == array()) {
+        $this->metaError = 'Empty';
+        echo "WARNING - get_fb_feed_all: No Video entry\n";
+      }
+      return $lines;
+    }
+
+    $lines = $this->parse_fb_items($d['data']);
+
+    if ($lines == array()) {
+      $this->metaError = 'Empty';
+      echo "WARNING: Empty feed\n";
+    }
+
+    return $lines;
   }
 
   public function get_yt_channel_all($username=null) {
@@ -359,7 +458,7 @@ class Crawler {
     #http://www.youtube.com/user/angularjs
     #http://www.youtube.com/view_play_list?p=91bbccf65ce3d190
     $pattern = '@.+www.youtube.com(/user/|/view_play_list\?p=)(.+)$@';
-    $fbPattern = '@^https?:\/\/graph\.facebook\.com\/([:alnum:]+)@';
+    $fbPattern = '@^https?:\/\/graph\.facebook\.com\/(-[[:alnum:]._]+)@';
     if (preg_match($pattern, $url, $matches)) {
       #print_r($matches);
       $this->ytId = $matches[2];
@@ -380,6 +479,39 @@ class Crawler {
       'type' => $this->ytType,
       'id' => $this->ytId,
     );
+  }
+
+  public function parse_fb_items($items) {
+
+    $lines = array();
+    $regex = '/^https?:\/\/(www\.youtube\.com\/watch\?v=|youtu\.be\/)([-A-Za-z_|0-9]+)/';
+
+    foreach ($items as $i) {
+
+      if ($i['type'] == 'video' && preg_match($regex, $i['link'], $matches)) {
+
+        $data = array (
+          'chId'      => $this->chId,
+          'uploader'  => $i['from']['name'],
+          'crawlTime' => $this->crawlTime,
+          'id'        => $matches[2],
+          # remove LF and tab
+          'title'     => str_replace("\t", '  ', str_replace("\n", '   ', $i['name'])),
+          'uploaded'  => strtotime($i['updated_time']),
+          'duration'  => 0,
+          # use mqDefault as thumbnail, but it is not listed in json, so construct it from sqDefault
+          'thumbnail' => $i['picture'],
+          'description' => str_replace("\t", '  ', str_replace("\n", '   ', $i['message'])),
+          'state' => 'fine',
+          'reason' => 'fine'
+        );
+      }
+
+      $line = implode("\t", $data);
+      $lines[] = $line;
+    }
+
+    return $lines;
   }
 
   public function parse_items($items, $chId=null, $type=null) {
