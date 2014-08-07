@@ -505,10 +505,9 @@ class Crawler {
           'state' => 'fine',
           'reason' => 'fine'
         );
+        $line = implode("\t", $data);
+        $lines[] = $line;
       }
-
-      $line = implode("\t", $data);
-      $lines[] = $line;
     }
 
     return $lines;
