@@ -152,7 +152,7 @@ class Crawler {
       } else {
           $meta['title'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['name']));
           $meta['thumbnail'] = "http://graph.facebook.com/${data['id']}/picture?type=large";
-          $meta['description'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['description']));
+          $meta['description'] = isset($data['description']) ? str_replace("\t", '  ', str_replace("\n", '   ', $data['description'])) : '';
       }
     }
       #echo $ytAPI . "\n";
@@ -458,7 +458,7 @@ class Crawler {
     #http://www.youtube.com/user/angularjs
     #http://www.youtube.com/view_play_list?p=91bbccf65ce3d190
     $pattern = '@.+www.youtube.com(/user/|/view_play_list\?p=)(.+)$@';
-    $fbPattern = '@^https?:\/\/graph\.facebook\.com\/(-[[:alnum:]._]+)@';
+    $fbPattern = '@^https?:\/\/graph\.facebook\.com\/([-[:alnum:]._]+)@';
     if (preg_match($pattern, $url, $matches)) {
       #print_r($matches);
       $this->ytId = $matches[2];
@@ -501,7 +501,7 @@ class Crawler {
           'duration'  => 0,
           # use mqDefault as thumbnail, but it is not listed in json, so construct it from sqDefault
           'thumbnail' => $i['picture'],
-          'description' => str_replace("\t", '  ', str_replace("\n", '   ', $i['message'])),
+          'description' => isset($i['message']) ? str_replace("\t", '  ', str_replace("\n", '   ', $i['message'])) : '',
           'state' => 'fine',
           'reason' => 'fine'
         );
