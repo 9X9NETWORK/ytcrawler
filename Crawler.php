@@ -1,5 +1,33 @@
 <?php
 
+class cUrl {
+    // from http://ontodevelopment.blogspot.com/2011/04/curloptheaderfunction-tutorial-with.html
+    public $response;
+    public $header;
+    public $httpcode;
+    public function __construct($url){
+        $ch = curl_init($url);
+        curl_setopt_array($ch, array(
+            CURLOPT_FOLLOWLOCATION => true, //Follow a redirect
+            CURLOPT_RETURNTRANSFER => true, //Causes curl_exec() to return the response
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_HEADER         => false, //Suppress headers from returning in curl_exec()
+            CURLOPT_HEADERFUNCTION => array($this, 'header_callback'),
+        ));
+        $this->response = curl_exec($ch);
+        $this->httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        return $this->response;
+    }
+
+    function header_callback($ch, $header_line){
+        $this->header .= $header_line;
+        return strlen($header_line);
+    }
+}
+
+
+
 class Crawler {
   public $ytData;
   public $headers;
@@ -25,6 +53,45 @@ class Crawler {
     $this->parse_yt_url();
   }
 
+  public function parse_yt_url($url=null) {
+    if ($url == null) {
+      $url = $this->ytUrl;
+    }
+
+    #http://www.youtube.com/user/angularjs
+    #http://www.youtube.com/view_play_list?p=91bbccf65ce3d190
+    $pattern = '@.+www.youtube.com(/user/|/view_play_list\?p=)(.+)$@';
+    $fbPattern = '@^https?:\/\/graph\.facebook\.com\/([-[:alnum:]._]+)@';
+    $vimeoChannelPattern = '@^https?://vimeo.com/channels/([^/]+)$@';
+    $vimeoPattern = '@^https?://vimeo.com/([^/]+)/?.*$@';
+    if (preg_match($pattern, $url, $matches)) {
+      #print_r($matches);
+      $this->ytId = $matches[2];
+      if ($matches[1] == '/user/') {
+        $this->ytType = 'channel';
+      } else {
+        $this->ytType = 'playlist';
+      }
+    } else if (preg_match($fbPattern, $url, $matches)) {
+      $this->ytType = 'facebook';
+      $this->ytId = $matches[1];
+    } else if (preg_match($vimeoChannelPattern, $url, $matches)) {
+      $this->ytType = 'vimeoChannel';
+      $this->ytId = $matches[1];
+    } else if (preg_match($vimeoPattern, $url, $matches)) {
+      $this->ytType = 'vimeo';
+      $this->ytId = $matches[1];
+    } else {
+      $this->ytType = 'unknown';
+      $this->ytId = '';
+    }
+
+    return array(
+      'type' => $this->ytType,
+      'id' => $this->ytId,
+    );
+  }
+
   public function get_yt_type() {
     return $this->ytType;
   }
@@ -35,7 +102,11 @@ class Crawler {
 
   public function get_yt_meta() {
     // have to run get_yt_data first as some meta data from get_yt_data
-    $meta = Array('title'=>'', 'description'=>'', 'thumbnail'=>'', 'updateDate'=>'');
+    if ($this->metaPrevious != '') {
+      $meta = json_decode($this->metaPrevious, true);
+    } else {
+      $meta = Array('title'=>'', 'description'=>'', 'thumbnail'=>'', 'updateDate'=>'0');
+    }
     $meta['error'] = $this->metaError;
 
     if ($this->metaError != 'OK') {
@@ -45,19 +116,10 @@ class Crawler {
     if ($this->ytType == 'channel') {
       
       # use the data from get_yt_data to avoid duplicated call to youtube
-      $meta['updateDate'] = $this->metaUpdateDate;
-
-      # check if there is update to channel
-      if ($this->metaPrevious != '') {
-        $oldMeta = json_decode($this->metaPrevious);
-        if ($oldMeta->updateDate >= $this->metaUpdateDate) {
-          # if no update, use previous meta
-          $meta['title'] = $oldMeta->title;
-          $meta['thumbnail'] = $oldMeta->thumbnail;
-          $meta['description'] = $oldMeta->description;
-          return $meta;
-        }
-      } 
+      if ($meta['updateDate'] >= $this->metaUpdateDate) {
+        # no update, use previous meta
+        return $meta;
+      }
 
       # call youtube to get new channel meta
       $ytAPI = 'http://gdata.youtube.com/feeds/api/users/' . $this->ytId . '?v=2&alt=json&prettyprint=true';
@@ -117,6 +179,48 @@ class Crawler {
       $meta['description'] = $this->metaDescription;
       $meta['updateDate'] = $this->metaUpdateDate;
 
+    } else if ($this->ytType == 'vimeoChannel') {
+      if ($this->metaPrevious == '') {
+        // get user info
+        $url = 'http://vimeo.com/api/v2/channel/' . $this->ytId . '/info.json';
+        $c = new cUrl($url);
+        if ($c->httpcode >= 400) {
+          echo 'FAILED url: ' . $url . "\n";
+          echo 'headers: ' . $c->header . "\n";
+          echo 'response: ' . $c->response . "\n";
+          $meta['description'] = '';
+        } else {
+          $d = json_decode($c->response);
+          $meta['description'] = $d->description;
+        }
+      } else {
+        $meta['description'] = $this->metaDescription;
+      }
+
+      $meta['title'] = $this->metaTitle;
+      $meta['thumbnail'] = $this->metaThumbnail;
+      $meta['updateDate'] = $this->metaUpdateDate;
+    } else if ($this->ytType == 'vimeo') {
+      if ($this->metaPrevious == '') {
+        // get user info
+        $url = 'http://vimeo.com/api/v2/' . $this->ytId . '/info.json';
+        $c = new cUrl($url);
+        if ($c->httpcode >= 400) {
+          echo 'FAILED url: ' . $url . "\n";
+          echo 'headers: ' . $c->header . "\n";
+          echo 'response: ' . $c->response . "\n";
+          $meta['description'] = '';
+        } else {
+          $d = json_decode($c->response);
+          $meta['description'] = $d->bio;
+        }
+      } else {
+        $meta['description'] = $this->metaDescription;
+      }
+
+      $meta['title'] = $this->metaTitle;
+      $meta['thumbnail'] = $this->metaThumbnail;
+      $meta['updateDate'] = $this->metaUpdateDate;
     } else if ($this->ytType == 'facebook') {
 
       # call facebook to get new channel meta
@@ -200,9 +304,166 @@ class Crawler {
       return $this->get_yt_playlist_all($this->ytId);
     } else if ($this->ytType == 'facebook') {
       return $this->get_fb_feed_all($this->ytId);
+    } else if ($this->ytType == 'vimeo' or $this->ytType == 'vimeoChannel') {
+      return $this->get_vimeo_all($this->ytId, $this->ytType);
     } else {
       return null;
     }
+  }
+
+  public function get_vimeo_all($id, $type) {
+    // vimeo user  api: http://vimeo.com/api/v2/username/request.output
+    // test api: http://vimeo.com/api/v2/user18489813/videos.json?page=1,2,3
+    // vimeo Channel api: http://vimeo.com/api/v2/channel/channelname/request.output
+    // test api: http://vimeo.com/api/v2/channel/770257/videos.json?page=1
+    // simple vimeo api allows max 3 pages, each max 20 items
+
+    echo 'videoId: ' . $id . "\n";
+    echo 'videoType: ' . $type . "\n";
+    
+    if ($this->metaPrevious != '') {
+      # compare updateDate with pervious meta data
+      $oldMeta = json_decode($this->metaPrevious);
+      $this->metaDescription = $oldMeta->description;
+      $oldUpdateDate = $oldMeta->updateDate;
+    } else {
+      $this->metaDescription = '';
+      $oldUpdateDate = 0;
+    }
+
+    echo '$oldUpdateDate: '. $oldUpdateDate . "\n";
+    $this->metaError = 'OK';
+
+    $lines = array();
+    $items = array();
+    $checkMeta = true;
+    $c = 1;
+    do {
+      if ($type == 'vimeo') {
+        $url = 'http://vimeo.com/api/v2/' . $id .'/videos.json?page=' . $c;
+      } else if ($type == 'vimeoChannel' ) {
+        $url = 'http://vimeo.com/api/v2/channel/' . $id .'/videos.json?page=' . $c;
+      } else {
+        echo 'FAILED wrong Vimeo Type: ' . $type . "\n";
+        echo 'Vimeo ID: ' . $id . "\n";
+        return false;
+      }
+
+      echo 'video API: ' . $url . "\n";
+      $h = new cUrl($url);
+      $videos = $h->response;
+      $headers = $h->header;
+      $httpcode = $h->httpcode;
+      if ($httpcode >= 400) {
+        echo 'FAILED url: ' . $url . "\n";
+        echo 'headers: ' . $headers . "\n";
+        echo 'response: ' . $videos . "\n";
+        $videos = '[]';
+        break;
+      }
+
+      $d = json_decode($videos, true);
+      $items = array_merge($items, $d);
+
+      // parse video out
+      foreach ($d as $i) {
+
+        if ($checkMeta) {
+          // check meta only once
+          $checkMeta = false;
+          $this->metaUpdateDate = strtotime($i['upload_date']);
+          $this->metaTitle = $i['user_name'];
+          $this->metaThumbnail = $i['user_portrait_huge'];
+          echo '$this->metaUpdateDate: ' . $this->metaUpdateDate . "\n";
+          if ($this->metaUpdateDate != 0 and $oldUpdateDate >= $this->metaUpdateDate) {
+            # No need to update the feed.  No further call to Vimeo
+            echo "No update to Vimeo\n";
+            $this->metaError = 'NoUpdate';
+            return $lines;
+          }
+        }
+
+        if (strtotime($i['upload_date']) != 0 and $oldUpdateDate >= strtotime($i['upload_date'])) {
+          #  No further call to Vimeo
+          echo "No further call to Vimeo\n";
+          return $lines;
+        }
+
+        $data = array (
+          'chId'      => $this->chId,
+          'uploader'  => $this->ytId,
+          'crawlTime' => $this->crawlTime,
+          'id'        => $i['url'],
+          # remove LF and tab
+          'title'       => str_replace("\t", '  ', str_replace("\n", '   ', str_replace("\r", '   ', $i['title']))),
+          'description' => str_replace("\t", '  ', str_replace("\n", '   ', str_replace("\r", '   ', $i['description']))),
+          'uploaded'  => strtotime($i['upload_date']),
+          'duration'  => $i['duration'],
+          'thumbnail' => $i['thumbnail_medium'],
+          'state' => 'fine',
+          'reason' => 'fine'
+        );
+        $line = implode("\t", $data);
+        $lines[] = $line;
+      }
+
+      echo 'item count: ' . count($d) . "\n";
+      if (count($d) < 20) break;
+
+      $c++;
+    } while ($c <= 3);
+
+    return $lines;
+  }
+
+  public function parse_vimeo_items($items) {
+
+    $lines = array();
+
+    $checkMeta = true;
+
+    foreach ($items as $i) {
+
+        if ($checkMeta) {
+          $checkMeta = false;
+          $this->metaError = 'OK';
+          $this->metaUpdateDate = strtotime($i['upload_date']);
+          $this->metaTitle = $i['user_name'];
+          $this->metaThumbnail = $i['user_portrait_huge'];
+          $this->metaDescription = '';
+          if ($this->metaPrevious != '') {
+            # compare updateDate with pervious meta data
+            $oldMeta = json_decode($this->metaPrevious);
+            $this->metaDescription = $oldMeta->description;
+            if ($this->metaUpdateDate != 0 and $oldMeta->updateDate >= $this->metaUpdateDate) {
+              # No need to update the feed.  No further call to youtube
+              $lines = array();
+              echo "No update to Vimeo\n";
+              $this->metaError = 'NoUpdate';
+              return $lines;
+            }
+          }
+        }
+
+        $data = array (
+          'chId'      => $this->chId,
+          'uploader'  => 'user' . $i['user_id'],
+          'crawlTime' => $this->crawlTime,
+          'id'        => $i['id'],
+          # remove LF and tab
+          'title'       => str_replace("\t", '  ', str_replace("\n", '   ', $i['title'])),
+          'description' => str_replace("\t", '  ', str_replace("\n", '   ', $i['description'])),
+          'uploaded'  => strtotime($i['upload_date']),
+          'duration'  => $i['duration'],
+          'thumbnail' => $i['thumbnail_medium'],
+          'state' => 'fine',
+          'reason' => 'fine'
+        );
+        $line = implode("\t", $data);
+        $lines[] = $line;
+    }
+
+    return $lines;
   }
 
   public function get_yt_channel($username=null, $start_index=1) {
@@ -450,37 +711,6 @@ class Crawler {
 
   }
 
-  public function parse_yt_url($url=null) {
-    if ($url == null) {
-      $url = $this->ytUrl;
-    }
-
-    #http://www.youtube.com/user/angularjs
-    #http://www.youtube.com/view_play_list?p=91bbccf65ce3d190
-    $pattern = '@.+www.youtube.com(/user/|/view_play_list\?p=)(.+)$@';
-    $fbPattern = '@^https?:\/\/graph\.facebook\.com\/([-[:alnum:]._]+)@';
-    if (preg_match($pattern, $url, $matches)) {
-      #print_r($matches);
-      $this->ytId = $matches[2];
-      if ($matches[1] == '/user/') {
-        $this->ytType = 'channel';
-      } else {
-        $this->ytType = 'playlist';
-      }
-    } else if (preg_match($fbPattern, $url, $matches)) {
-      $this->ytType = 'facebook';
-      $this->ytId = $matches[1];
-    } else {
-      $this->ytType = 'unknown';
-      $this->ytId = '';
-    }
-
-    return array(
-      'type' => $this->ytType,
-      'id' => $this->ytId,
-    );
-  }
-
   public function parse_fb_items($items) {
 
     $lines = array();
@@ -512,6 +742,7 @@ class Crawler {
 
     return $lines;
   }
+
 
   public function parse_items($items, $chId=null, $type=null) {
     if ($chId == null) {
