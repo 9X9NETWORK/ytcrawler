@@ -1,6 +1,7 @@
 <?php
 
 class cUrl {
+    // provide http 1.1 support to get response in body
     // from http://ontodevelopment.blogspot.com/2011/04/curloptheaderfunction-tutorial-with.html
     public $response;
     public $header;
@@ -108,6 +109,7 @@ class Crawler {
       $meta = Array('title'=>'', 'description'=>'', 'thumbnail'=>'', 'updateDate'=>'0');
     }
     $meta['error'] = $this->metaError;
+    $meta['error'] = $this->ytType;
 
     if ($this->metaError != 'OK') {
       return $meta;
@@ -393,7 +395,7 @@ class Crawler {
           'chId'      => $this->chId,
           'uploader'  => $this->ytId,
           'crawlTime' => $this->crawlTime,
-          'id'        => $i['url'],
+          'id'        => $i['id'],
           # remove LF and tab
           'title'       => str_replace("\t", '  ', str_replace("\n", '   ', str_replace("\r", '   ', $i['title']))),
           'description' => str_replace("\t", '  ', str_replace("\n", '   ', str_replace("\r", '   ', $i['description']))),
