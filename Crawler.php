@@ -108,7 +108,7 @@ class Crawler {
     } else {
       $meta = Array('title'=>'', 'description'=>'', 'thumbnail'=>'', 'updateDate'=>'0');
     }
-    $meta['error'] = $this->metaError;
+    $meta['type'] = $this->metaError;
     $meta['error'] = $this->ytType;
 
     if ($this->metaError != 'OK') {
