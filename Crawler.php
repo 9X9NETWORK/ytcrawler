@@ -397,11 +397,11 @@ class Crawler {
           'crawlTime' => $this->crawlTime,
           'id'        => $i['id'],
           # remove LF and tab
-          'title'       => str_replace("\t", '  ', str_replace("\n", '   ', str_replace("\r", '   ', $i['title']))),
-          'description' => str_replace("\t", '  ', str_replace("\n", '   ', str_replace("\r", '   ', $i['description']))),
+          'title'       => str_replace("\t", '  ', str_replace("\r", '   ', str_replace("\n", '   ', $i['title']))),
           'uploaded'  => strtotime($i['upload_date']),
           'duration'  => $i['duration'],
           'thumbnail' => $i['thumbnail_medium'],
+          'description' => str_replace("\t", '  ', str_replace("\r", '   ', str_replace("\n", '   ', $i['description']))),
           'state' => 'fine',
           'reason' => 'fine'
         );
@@ -414,56 +414,6 @@ class Crawler {
 
       $c++;
     } while ($c <= 3);
-
-    return $lines;
-  }
-
-  public function parse_vimeo_items($items) {
-
-    $lines = array();
-
-    $checkMeta = true;
-
-    foreach ($items as $i) {
-
-        if ($checkMeta) {
-          $checkMeta = false;
-          $this->metaError = 'OK';
-          $this->metaUpdateDate = strtotime($i['upload_date']);
-          $this->metaTitle = $i['user_name'];
-          $this->metaThumbnail = $i['user_portrait_huge'];
-          $this->metaDescription = '';
-          if ($this->metaPrevious != '') {
-            # compare updateDate with pervious meta data
-            $oldMeta = json_decode($this->metaPrevious);
-            $this->metaDescription = $oldMeta->description;
-            if ($this->metaUpdateDate != 0 and $oldMeta->updateDate >= $this->metaUpdateDate) {
-              # No need to update the feed.  No further call to youtube
-              $lines = array();
-              echo "No update to Vimeo\n";
-              $this->metaError = 'NoUpdate';
-              return $lines;
-            }
-          }
-        }
-
-        $data = array (
-          'chId'      => $this->chId,
-          'uploader'  => 'user' . $i['user_id'],
-          'crawlTime' => $this->crawlTime,
-          'id'        => $i['id'],
-          # remove LF and tab
-          'title'       => str_replace("\t", '  ', str_replace("\n", '   ', $i['title'])),
-          'description' => str_replace("\t", '  ', str_replace("\n", '   ', $i['description'])),
-          'uploaded'  => strtotime($i['upload_date']),
-          'duration'  => $i['duration'],
-          'thumbnail' => $i['thumbnail_medium'],
-          'state' => 'fine',
-          'reason' => 'fine'
-        );
-        $line = implode("\t", $data);
-        $lines[] = $line;
-    }
 
     return $lines;
   }
