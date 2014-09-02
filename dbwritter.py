@@ -51,12 +51,36 @@ try:
    response = open(fileName, 'r')
    meta = json.load(response)
    response.close()
-   chUpdateDate = meta['updateDate']
-   chError = meta['error']
 except IOError, e:
    chError = "NoFile"
+   print e
+
+try:
+   chUpdateDate = meta['updateDate']
+except KeyError, e:
+   chUpdateDate = '';
+
+try:
+   chError = meta['error']
 except KeyError, e:
    chError = "OK"
+
+try:
+   chType = meta['type']
+   if chType == 'channel':
+      chType = 'youtube'
+   elif chType == 'playlist':
+      chType = 'youtube'
+   elif chType == 'facebook':
+      chType = 'youtube'
+   elif chType == 'vimeoChannel':
+     chType = 'vimeo'
+   elif chType == 'vimeo':
+     chType = 'vimeo'
+   elif chType == 'unknown':
+     chType = 'unknown'
+except KeyError, e:
+   chType = "youtube"
 
 try:
    fileName = '/mnt/tmp/ytcrawl/ponderosa.feed.' + cId + '.txt'
@@ -89,6 +113,14 @@ if chError == "Non2xx":
    dbcontent.commit()  
    cursor.close()
    exit()
+
+if chType == 'none': #should not happen, default is youtube
+   print "Info: ch type none, exit"
+   dbcontent.commit()
+   cursor.close()
+   exit()
+
+print "chType:" + chType
 
 if (chError != "OK" and chError != "Empty" and chError != "NoUpdate"):
     #Invalid, NotFound, Forbidden enters here
@@ -153,7 +185,10 @@ dbDic = {}
 for line in feed:
   data = line.split('\t')
   videoid = data[3]
-  fileUrl = "http://www.youtube.com/watch?v=" + videoid
+  if chType == 'youtube':
+     fileUrl = "http://www.youtube.com/watch?v=" + videoid
+  else:
+     fileUrl = "http://www.vimeo.com/" + videoid
   textDic[fileUrl] = fileUrl
 
 cursor.execute("""
@@ -195,21 +230,27 @@ for line in feed:
   description = data[8]
   description = description[:1498] + (description[1498:] and '..')
   state = data[9].strip()
-  reason = data[10].strip()
-  fileUrl = "http://www.youtube.com/watch?v=" + videoid
+  if len(data) > 10:
+     reason = data[10].strip()
+  else:
+     reason = "none"
+  if chType == 'youtube':
+     fileUrl = "http://www.youtube.com/watch?v=" + videoid
+  else:
+     fileUrl = "http://www.vimeo.com/" + videoid
   # debug output
   print "-------------------"
   print "cid:" + channelId
   print "username:" + username
   print "crawdate:" + crawldate
+  print "fileUrl:" + fileUrl
   print "name:" + name 
   print "timestamp:" + timestamp 
   print "duration:" + duration 
   print "thumbnail:" + thumbnail
   print "description:" + description
   print "state:" + state
-  print "fileUrl:" + fileUrl
-
+ 
   if channelId != cId:
      print "Fatal: channelId not matching"
      sys.exit(0) 
@@ -242,10 +283,15 @@ for line in feed:
      eIds.append(eId)
      print "eId" + str(eId)
      # write to nnprogram
+     if chType == "youtube":
+        contentType = 1
+     else:
+        contentType = 6 #for now
+     print "--debug type--" + str(contentType)
      cursor.execute("""
         insert into nnprogram (channelId, episodeId, name, intro, imageUrl, duration, fileUrl, publishDate, contentType, isPublic, status)
-                      values (%s, %s, %s, %s, %s, %s, %s, from_unixtime(%s), 1, %s, 0)
-        """, (cId, eId, name, description, thumbnail, duration, fileUrl, timestamp, isPublic))
+                      values (%s, %s, %s, %s, %s, %s, %s, from_unixtime(%s), %s, %s, 0)
+        """, (cId, eId, name, description, thumbnail, duration, fileUrl, timestamp, contentType, isPublic))
   else:
      # existing data, update the db
      eId = data[1]
