@@ -157,8 +157,8 @@ ch_row = cursor.fetchone()
 if ch_row is not None:
     ch_updateDate = ch_row[0]
     print "Info: -- check update time --"
-    if (chUpdateDate != ''): # YouTube-playlist follow playlist's update time
-       baseTimestamp = chUpdateDate
+    if (chUpdateDate != ''): # YouTube-playlist follow playlist's update time, zero or empty are more likely youtube channel
+       baseTimestamp = int(chUpdateDate)
     print "Info: original channel time: " + str(ch_updateDate) + "; time from youtube video: " + str(baseTimestamp)
     if (baseTimestamp != 0):
        cursor.execute("""
@@ -216,6 +216,7 @@ for d in data:
 print "-- parsing text --"
 i = 1 #seq
 cntEpisode = 0
+chUpdateDate = 0
 eIds = []
 for line in feed:
   data = line.split('\t')
@@ -255,8 +256,8 @@ for line in feed:
      print "Fatal: channelId not matching"
      sys.exit(0) 
 
-  if timestamp > baseTimestamp:
-     baseTimestamp = timestamp 
+  if baseTimestamp == 0 and timestamp > chUpdateDate:
+     chUpdateDate = timestamp 
   if timestamp == "0":
      # workaround
      print "timestamp is zero (maybe a private video)"
@@ -276,9 +277,9 @@ for line in feed:
      # new entry from youtube, write to nnepisode
      print "new entry, video:" + fileUrl 
      cursor.execute("""
-        insert into nnepisode (channelId, name, intro, imageUrl, duration, seq, publishDate, isPublic)
-                       values (%s, %s, %s, %s, %s, %s, from_unixtime(%s), %s)
-        """, (cId, name, description, thumbnail, duration, i, timestamp, isPublic))
+        insert into nnepisode (channelId, name, intro, imageUrl, duration, seq, publishDate, updateDate, isPublic)
+                       values (%s, %s, %s, %s, %s, %s, from_unixtime(%s), from_unixtime(%s), %s)
+        """, (cId, name, description, thumbnail, duration, i, timestamp, timestamp, isPublic))
      eId = cursor.lastrowid
      eIds.append(eId)
      print "eId" + str(eId)
@@ -289,31 +290,34 @@ for line in feed:
         contentType = 6 #for now
      print "--debug type--" + str(contentType)
      cursor.execute("""
-        insert into nnprogram (channelId, episodeId, name, intro, imageUrl, duration, fileUrl, publishDate, contentType, isPublic, status)
-                      values (%s, %s, %s, %s, %s, %s, %s, from_unixtime(%s), %s, %s, 0)
-        """, (cId, eId, name, description, thumbnail, duration, fileUrl, timestamp, contentType, isPublic))
+        insert into nnprogram (channelId, episodeId, name, intro, imageUrl, duration, fileUrl, publishDate, updateDate,  contentType, isPublic, status)
+                      values (%s, %s, %s, %s, %s, %s, %s, from_unixtime(%s), from_unixtime(%s), %s, %s, 0)
+        """, (cId, eId, name, description, thumbnail, duration, fileUrl, timestamp, timestamp, contentType, isPublic))
   else:
      # existing data, update the db
      eId = data[1]
      cursor.execute("""
         update nnepisode set seq = %s , name = %s , intro = %s , imageUrl = %s , duration = %s ,
-         publishDate = from_unixtime(%s) , isPublic = %s where id = %s
-        """, (i, name, description, thumbnail, duration, timestamp, isPublic, eId))
+         publishDate = from_unixtime(%s) , updateDate = from_unixtime(%s), isPublic = %s where id = %s
+        """, (i, name, description, thumbnail, duration, timestamp, timestamp, isPublic, eId))
      cursor.execute("""
         update nnprogram set name = %s , intro = %s , imageUrl = %s , duration = %s ,
-         publishDate = from_unixtime(%s) , isPublic = %s where channelId = %s and episodeId = %s 
-        """, (name, description, thumbnail, duration, timestamp, isPublic, cId, eId))
+         publishDate = from_unixtime(%s) , updateDate = from_unixtime(%s), isPublic = %s where channelId = %s and episodeId = %s 
+        """, (name, description, thumbnail, duration, timestamp, timestamp, isPublic, cId, eId))
      print "duplicate, update seq and all meta"
   i = i + 1
    
 # ch readonly set back when done all sync job
 # update ch cntEpisode
 # transcodingUpdateDate stores the timestamp of synchronization time
+# use original ch update time from json if supplied
+if baseTimestamp != 0:
+   chUpdateDate = baseTimestamp
 cursor.execute("""
         update nnchannel set readonly = false , cntEpisode = %s ,
-                             transcodingUpdateDate = %s
+                             transcodingUpdateDate = %s, updateDate = from_unixtime(%s)
          where id = %s             
-             """, (cntEpisode, int(time.time()), cId))
+             """, (cntEpisode, int(time.time()), chUpdateDate, cId))
 dbcontent.commit()  
 cursor.close ()
 
