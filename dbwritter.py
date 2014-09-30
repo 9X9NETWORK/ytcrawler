@@ -329,11 +329,6 @@ url = "http://" + apiserver + "/wd/programCache?channel=" + str(cId) + "&t=" + s
 print url;
 urllib2.urlopen(url).read()
 
-for eId in eIds:
-   url = "http://" + apiserver + "/api/episodes/" + str(eId) + "/scheduledAutosharing/facebook"
-   urllib2.urlopen(url).read()
-   time.sleep(0.5)
-
 if len(eIds) is not 0:
     print "new published episodes: " + ", ".join(str(eId) for eId in eIds)
 
