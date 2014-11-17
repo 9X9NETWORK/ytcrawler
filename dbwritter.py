@@ -303,7 +303,7 @@ for line in feed:
      cursor.execute("""
         update nnprogram set name = %s , intro = %s , imageUrl = %s , duration = %s , endTime = %s ,
         publishDate = from_unixtime(%s) , updateDate = from_unixtime(%s), isPublic = %s where channelId = %s and episodeId = %s 
-        """, (name, description, thumbnail, duration, endTime, timestamp, timestamp, isPublic, cId, eId))
+        """, (name, description, thumbnail, duration, dutaion, timestamp, timestamp, isPublic, cId, eId))
      print "duplicate, update seq and all meta"
   i = i + 1
    
