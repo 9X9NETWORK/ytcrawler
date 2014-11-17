@@ -291,7 +291,7 @@ for line in feed:
      print "--debug type--" + str(contentType)
      cursor.execute("""
         insert into nnprogram (channelId, episodeId, name, intro, imageUrl, duration, endTime, fileUrl, publishDate, updateDate,  contentType, isPublic, status)
-                      values (%s, %s, %s, %s, %s, %s, %s, from_unixtime(%s), from_unixtime(%s), %s, %s, 0)
+                      values (%s, %s, %s, %s, %s, %s, %s, %s, from_unixtime(%s), from_unixtime(%s), %s, %s, 0)
         """, (cId, eId, name, description, thumbnail, duration, duration, fileUrl, timestamp, timestamp, contentType, isPublic))
   else:
      # existing data, update the db
