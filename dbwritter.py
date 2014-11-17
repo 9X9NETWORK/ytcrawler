@@ -290,20 +290,20 @@ for line in feed:
         contentType = 6 #for now
      print "--debug type--" + str(contentType)
      cursor.execute("""
-        insert into nnprogram (channelId, episodeId, name, intro, imageUrl, duration, fileUrl, publishDate, updateDate,  contentType, isPublic, status)
+        insert into nnprogram (channelId, episodeId, name, intro, imageUrl, duration, endTime, fileUrl, publishDate, updateDate,  contentType, isPublic, status)
                       values (%s, %s, %s, %s, %s, %s, %s, from_unixtime(%s), from_unixtime(%s), %s, %s, 0)
-        """, (cId, eId, name, description, thumbnail, duration, fileUrl, timestamp, timestamp, contentType, isPublic))
+        """, (cId, eId, name, description, thumbnail, duration, duration, fileUrl, timestamp, timestamp, contentType, isPublic))
   else:
      # existing data, update the db
      eId = data[1]
      cursor.execute("""
         update nnepisode set seq = %s , name = %s , intro = %s , imageUrl = %s , duration = %s ,
-         publishDate = from_unixtime(%s) , updateDate = from_unixtime(%s), isPublic = %s where id = %s
+        publishDate = from_unixtime(%s) , updateDate = from_unixtime(%s), isPublic = %s where id = %s
         """, (i, name, description, thumbnail, duration, timestamp, timestamp, isPublic, eId))
      cursor.execute("""
-        update nnprogram set name = %s , intro = %s , imageUrl = %s , duration = %s ,
-         publishDate = from_unixtime(%s) , updateDate = from_unixtime(%s), isPublic = %s where channelId = %s and episodeId = %s 
-        """, (name, description, thumbnail, duration, timestamp, timestamp, isPublic, cId, eId))
+        update nnprogram set name = %s , intro = %s , imageUrl = %s , duration = %s , endTime = %s ,
+        publishDate = from_unixtime(%s) , updateDate = from_unixtime(%s), isPublic = %s where channelId = %s and episodeId = %s 
+        """, (name, description, thumbnail, duration, endTime, timestamp, timestamp, isPublic, cId, eId))
      print "duplicate, update seq and all meta"
   i = i + 1
    
