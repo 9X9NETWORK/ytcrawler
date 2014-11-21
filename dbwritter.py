@@ -287,7 +287,7 @@ for line in feed:
      if chType == "youtube":
         contentType = 1
      else:
-        contentType = 6 #for now
+        contentType = 7 # CONTENTTYPE_TRIALFIRST
      print "--debug type--" + str(contentType)
      cursor.execute("""
         insert into nnprogram (channelId, episodeId, name, intro, imageUrl, duration, endTime, fileUrl, publishDate, updateDate,  contentType, isPublic, status)
