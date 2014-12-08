@@ -83,6 +83,14 @@ except KeyError, e:
    chType = "youtube"
 
 try:
+   if meta['isRealtime'] == 'true':
+      isRealtime = True
+   else:
+      isRealtime = False
+except KeyError, e:
+   isRealtime = False
+
+try:
    fileName = '/mnt/tmp/ytcrawl/ponderosa.feed.' + cId + '.txt'
    response = open(fileName, 'r')
    feed = response.readlines()
@@ -94,13 +102,18 @@ if chError == True:
    chError = "Error"
 if chError == None:
    chError = "OK"
-print "Info: chError," + str(chError)
+print "Info: chError," + str(chError) + ", isRealtime " + str(isRealtime)
 
 cursor = dbcontent.cursor()
 # always dismiss read-only status
 cursor.execute("""
                update nnchannel set readonly = false where id = %s
                """, (cId))
+# clean channel cache
+if isRealtime:
+   url = "http://" + apiserver + "/wd/channelCache?channel=" + str(cId) + "&t=" + str(int(time.time()))
+   print url
+   urllib2.urlopen(url).read()
 
 if chError == "Timeout":
    print "Info: timeout, exit"
@@ -328,6 +341,11 @@ print "-- call api --"
 url = "http://" + apiserver + "/wd/programCache?channel=" + str(cId) + "&t=" + str(int(time.time()))
 print url;
 urllib2.urlopen(url).read()
+# clean channel cache
+if isRealtime:
+   url = "http://" + apiserver + "/wd/channelCache?channel=" + str(cId) + "&t=" + str(int(time.time()))
+   print url
+   urllib2.urlopen(url).read()
 
 if len(eIds) is not 0:
     print "new published episodes: " + ", ".join(str(eId) for eId in eIds)

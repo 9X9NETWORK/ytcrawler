@@ -39,13 +39,13 @@ echo 'ytcrawl for ' . $crl->ytId . "\n";
 
 $lines = $crl->get_yt_data();
 $meta = $crl->get_yt_meta();
+$meta['isRealtime'] = $decoded->isRealtime;
 
 if (isset($meta['error']) and ($meta['error'] == 'NoUpdate' or $meta['error'] == 'Timeout' or $meta['error'] == 'Non2xx')) {
   echo 'No Update or Timed out or Non2xx' . "\n";
 } else {
   file_put_contents($outFile, implode("\n", $lines));
 }
-
 file_put_contents($metaFile, json_encode($meta));
 
 echo 'end crawling - ' . date("Y-m-d H:i:s\n");
