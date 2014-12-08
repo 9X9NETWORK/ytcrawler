@@ -110,27 +110,30 @@ cursor.execute("""
                update nnchannel set readonly = false where id = %s
                """, (cId))
 # clean channel cache
-if isRealtime:
-   url = "http://" + apiserver + "/wd/channelCache?channel=" + str(cId) + "&t=" + str(int(time.time()))
-   print url
-   urllib2.urlopen(url).read()
+channelCacheUrl = "http://" + apiserver + "/wd/channelCache?channel=" + str(cId) + "&t=" + str(int(time.time()))
 
 if chError == "Timeout":
    print "Info: timeout, exit"
    dbcontent.commit()  
    cursor.close()
+   if isRealtime:
+      urllib2.urlopen(channelCacheUrl).read()
    exit()
 
 if chError == "Non2xx":
    print "Info: non2xx, exit"
    dbcontent.commit()  
    cursor.close()
+   if isRealtime:
+      urllib2.urlopen(channelCacheUrl).read()
    exit()
 
 if chType == 'none': #should not happen, default is youtube
    print "Info: ch type none, exit"
    dbcontent.commit()
    cursor.close()
+   if isRealtime:
+      urllib2.urlopen(channelCacheUrl).read()
    exit()
 
 print "chType:" + chType
@@ -144,6 +147,8 @@ if (chError != "OK" and chError != "Empty" and chError != "NoUpdate"):
     dbcontent.commit()  
     cursor.close()
     print "Warning: invalid playlist! (" + str(cId) + ")"
+    if isRealtime:
+       urllib2.urlopen(channelCacheUrl).read()
     sys.exit(0) 
 
 # bring it back to live
@@ -157,6 +162,8 @@ if chError == "NoUpdate":
    print "Info: no update"
    dbcontent.commit()  
    cursor.close()
+   if isRealtime:
+      urllib2.urlopen(channelCacheUrl).read()
    exit()
 
 # ch updateDate check
@@ -190,6 +197,8 @@ if chError == "Empty":
    print "Warning: empty, deleting all the nnepisodes and nnprograms and exit"
    dbcontent.commit()
    cursor.close()
+   if isRealtime:
+      urllib2.urlopen(channelCacheUrl).read()
    exit()
 
 # read things to dic
@@ -343,9 +352,8 @@ print url;
 urllib2.urlopen(url).read()
 # clean channel cache
 if isRealtime:
-   url = "http://" + apiserver + "/wd/channelCache?channel=" + str(cId) + "&t=" + str(int(time.time()))
    print url
-   urllib2.urlopen(url).read()
+   urllib2.urlopen(channelCacheUrl).read()
 
 if len(eIds) is not 0:
     print "new published episodes: " + ", ".join(str(eId) for eId in eIds)
