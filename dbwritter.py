@@ -106,14 +106,14 @@ print "Info: chError," + str(chError) + ", isRealtime " + str(isRealtime)
 
 cursor = dbcontent.cursor()
 # always dismiss read-only status
-cursor.execute("""
-               update nnchannel set readonly = false where id = %s
-               """, (cId))
+sqlDissmissReadonly = "update nnchannel set readonly = false where id = " + cId
+
 # clean channel cache
 channelCacheUrl = "http://" + apiserver + "/wd/channelCache?channel=" + str(cId) + "&t=" + str(int(time.time()))
 
 if chError == "Timeout":
    print "Info: timeout, exit"
+   cursor.execute(sqlDissmissReadonly);
    dbcontent.commit()  
    cursor.close()
    if isRealtime:
@@ -122,6 +122,7 @@ if chError == "Timeout":
 
 if chError == "Non2xx":
    print "Info: non2xx, exit"
+   cursor.execute(sqlDissmissReadonly);
    dbcontent.commit()  
    cursor.close()
    if isRealtime:
@@ -130,6 +131,7 @@ if chError == "Non2xx":
 
 if chType == 'none': #should not happen, default is youtube
    print "Info: ch type none, exit"
+   cursor.execute(sqlDissmissReadonly);
    dbcontent.commit()
    cursor.close()
    if isRealtime:
@@ -144,6 +146,7 @@ if (chError != "OK" and chError != "Empty" and chError != "NoUpdate"):
                    update nnchannel_pref set value = 'failed'
                    where channelId = %s and item = 'auto-sync'
                    """, (cId))
+    cursor.execute(sqlDissmissReadonly);
     dbcontent.commit()  
     cursor.close()
     print "Warning: invalid playlist! (" + str(cId) + ")"
@@ -160,6 +163,7 @@ cursor.execute("""
 
 if chError == "NoUpdate":
    print "Info: no update"
+   cursor.execute(sqlDissmissReadonly);
    dbcontent.commit()  
    cursor.close()
    if isRealtime:
@@ -195,6 +199,7 @@ if chError == "Empty":
    cursor.execute("""delete from nnprogram where channelId = %s
         """, (cId))
    print "Warning: empty, deleting all the nnepisodes and nnprograms and exit"
+   cursor.execute(sqlDissmissReadonly);
    dbcontent.commit()
    cursor.close()
    if isRealtime:
@@ -341,7 +346,7 @@ cursor.execute("""
          where id = %s             
              """, (cntEpisode, int(time.time()), chUpdateDate, cId))
 dbcontent.commit()  
-cursor.close ()
+cursor.close()
 
 print "-- record done --"
 print "cntEpisode = " + str(cntEpisode) + ", i = " + str(i)
@@ -352,7 +357,7 @@ print url;
 urllib2.urlopen(url).read()
 # clean channel cache
 if isRealtime:
-   print url
+   print channelCacheUrl
    urllib2.urlopen(channelCacheUrl).read()
 
 if len(eIds) is not 0:
