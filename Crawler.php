@@ -543,7 +543,8 @@ class Crawler {
           if ($this->metaPrevious != '') {
             # compare updateDate with pervious meta data
             $oldMeta = json_decode($this->metaPrevious);
-            if ($this->metaUpdateDate != 0 and $oldMeta->updateDate >= $this->metaUpdateDate) {
+            if ($this->metaUpdateDate != 0 and $oldMeta->updateDate >= $this->metaUpdateDate 
+                                           and $oldMeta->isRealtime != "true") {
               # No need to update the feed.  No further call to youtube
               $lines = array();
               echo "No update to channel\n";
@@ -638,7 +639,8 @@ class Crawler {
         if ($this->metaPrevious != '') {
           # compare updateDate with pervious meta data
           $oldMeta = json_decode($this->metaPrevious);
-          if ($this->metaUpdateDate != 0 and $oldMeta->updateDate >= $this->metaUpdateDate) {
+          if ($this->metaUpdateDate != 0 and $oldMeta->updateDate >= $this->metaUpdateDate
+                                         and $oldMeta->isRealtime != "true") {
             # No need to update the feed.  No further call to youtube
             $lines = array();
             $this->metaError = 'NoUpdate';
