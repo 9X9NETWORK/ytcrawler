@@ -44,7 +44,7 @@ for ch in $chlist; do
         echo "{ \"id\":\"${ch}\", \"isRealtime\":\"false\", \"contentType\":\"6\", \"sourceUrl\":\"${sourceUrl}\" }" > "$req_file"
     fi
     /usr/bin/php "$ytcrawler_dir/ytcrawler.php" $ch
-    sleep 1
+    sleep 0.5
 done
 
 sql="SELECT id FROM nnchannel WHERE status = 0 AND contentType in (16,17)"
