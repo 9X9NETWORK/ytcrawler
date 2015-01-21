@@ -106,7 +106,7 @@ print "Info: chError," + str(chError) + ", isRealtime " + str(isRealtime)
 
 cursor = dbcontent.cursor()
 # always dismiss read-only status
-sqlDissmissReadonly = "update nnchannel set readonly = false where id = " + cId
+sqlDissmissReadonly = "update nnchannel set readonly = false, transcodingUpdateDate = unix_timestamp() where id = " + cId
 
 # clean channel cache
 channelCacheUrl = "http://" + apiserver + "/wd/channelCache?channel=" + str(cId) + "&t=" + str(int(time.time()))
