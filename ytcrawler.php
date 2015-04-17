@@ -38,9 +38,10 @@ if (file_exists($metaFile)) {
 echo 'ytcrawl for ' . $crl->ytId . "\n";
 
 $lines = $crl->get_yt_data();
+#print_r($lines);
 $meta = $crl->get_yt_meta();
 $meta['isRealtime'] = $decoded->isRealtime;
-
+#print_r($meta);
 if (isset($meta['error']) and ($meta['error'] == 'NoUpdate' or $meta['error'] == 'Timeout' or $meta['error'] == 'Non2xx')) {
   echo 'No Update or Timed out or Non2xx' . "\n";
 } else {
@@ -49,7 +50,7 @@ if (isset($meta['error']) and ($meta['error'] == 'NoUpdate' or $meta['error'] ==
 file_put_contents($metaFile, json_encode($meta));
 
 echo 'end crawling - ' . date("Y-m-d H:i:s\n");
-$log = '/mnt/tmp/ytcrawl/dbwritter-' . date("Ymd") . '.log';
+$log = '/mnt/tmp/ytcrawl/dbwritterV3-' . date("Ymd") . '.log';
 #run dbwriter.py in background
 file_put_contents($log, date("Y-m-d H:i:s\n"), FILE_APPEND);
 $command = '/usr/bin/python ' . __DIR__ . '/dbwritter.py ' . $decoded->id . ' >> ' . $log . ' 2>&1 &';

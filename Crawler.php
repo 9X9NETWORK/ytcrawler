@@ -1,4 +1,7 @@
 <?php
+#set_include_path(get_include_path() . PATH_SEPARATOR . '/var/www/ytcrawlerV3/google-api-php-client/src');
+set_include_path(get_include_path() . PATH_SEPARATOR . 'google-api-php-client/src');
+require_once 'Google/autoload.php';
 
 class cUrl {
     // provide http 1.1 support to get response in body
@@ -30,9 +33,11 @@ class cUrl {
 
 
 class Crawler {
+  public $devKey = 'AIzaSyAooTL2VXAXKIpDAHNGKH_voxAPDJaLT6Y';
   public $ytData;
   public $headers;
   public $httpcode;
+  public $httpError;
   public $crawlTime;
   public $chId;
   public $ytUrl;
@@ -44,14 +49,21 @@ class Crawler {
   public $metaDescription = '';
   public $metaUpdateDate = '';
   public $fbAccessToken = '110847978946712|i47zynWykCO0V1zjJz_BXc6EIXY';
-
   public $metaError = 'OK';
+  public $youtube;
+  public $ul_pl_id;
 
   public function __construct($chId, $url) {
     $this->crawlTime = time();
     $this->chId = $chId;
     $this->ytUrl = $url;
     $this->parse_yt_url();
+
+    $client = new Google_Client();
+    $client->setDeveloperKey($this->devKey);
+
+    // Define an object that will be used to make all API requests.
+    $this->youtube = new Google_Service_YouTube($client);
   }
 
   public function parse_yt_url($url=null) {
@@ -101,6 +113,62 @@ class Crawler {
     return $this->ytId;
   }
 
+  public function get_yt_ch_meta($username) {
+    # check it's user id or channel id and get uploaded playlist id
+    if (preg_match('/^UC(.{22})$/', $username, $matches)) {
+      $opt = array(
+        'id' => $username,
+      );
+    } else {
+      $opt = array(
+        'forUsername' => $username,
+      );
+    }
+
+    try {
+      $ret = $this->youtube->channels->listChannels('snippet', $opt);
+      $this->httpcode = '200';
+      $this->httpError = '';
+      $this->metaTitle = $ret['items'][0]['snippet']['title'];
+      $this->metaThumbnail = $ret['items'][0]['snippet']['thumbnails']['medium']['url'];
+      $this->metaDescription = $ret['items'][0]['snippet']['description'];
+
+    } catch (Google_ServiceException $e) {
+      $this->httpcode = '500';
+      $this->httpError = sprintf('<p>A service error occurred: <code>%s</code></p>',
+        htmlspecialchars($e->getMessage()));
+    } catch (Google_Exception $e) {
+      $this->httpcode = '404';
+      $this->httpErrort = sprintf('<p>An client error occurred: <code>%s</code></p>',
+        htmlspecialchars($e->getMessage()));
+    }
+  }
+
+  public function get_yt_pl_meta($playlistid) {
+    $opt = array(
+      'id' => $playlistid,
+    );
+
+    try {
+      $ret = $this->youtube->playlists->listPlaylists('snippet', $opt);
+      $this->httpcode = '200';
+      $this->httpError = '';
+      $this->metaTitle = $ret['items'][0]['snippet']['title'];
+      $this->metaThumbnail = $ret['items'][0]['snippet']['thumbnails']['medium']['url'];
+      $this->metaDescription = $ret['items'][0]['snippet']['description'];
+
+    } catch (Google_ServiceException $e) {
+      $this->httpcode = '500';
+      $this->httpError = sprintf('<p>A service error occurred: <code>%s</code></p>',
+        htmlspecialchars($e->getMessage()));
+    } catch (Google_Exception $e) {
+      $this->httpcode = '404';
+      $this->httpErrort = sprintf('<p>An client error occurred: <code>%s</code></p>',
+        htmlspecialchars($e->getMessage()));
+    }
+  }
+
+
   public function get_yt_meta() {
     // have to run get_yt_data first as some meta data from get_yt_data
     if ($this->metaPrevious != '') {
@@ -116,6 +184,7 @@ class Crawler {
     }
 
     if ($this->ytType == 'channel') {
+      $meta['ul_pl_id'] = $this->ul_pl_id;
       
       # use the data from get_yt_data to avoid duplicated call to youtube
       if ($meta['updateDate'] >= $this->metaUpdateDate) {
@@ -124,18 +193,13 @@ class Crawler {
       }
 
       # call youtube to get new channel meta
-      $ytAPI = 'http://gdata.youtube.com/feeds/api/users/' . $this->ytId . '?v=2&alt=json&prettyprint=true';
-      echo $ytAPI . "\n";
-      $ret = file_get_contents($ytAPI);
-      $headers = $http_response_header;
+      $this->get_yt_ch_meta($this->ytId);
 
-      $httpcode = $this->header_code($headers);
-
-      if ($httpcode != '200') {
-        echo 'FAILED - get_yt_meta: httpcode: ' . $httpcode . ' data: ' . $ret . "\n";
-        if ($httpcode == 404) {
+      if ($this->httpcode != '200') {
+        echo 'FAILED - get_yt_meta: httpcode: ' . $this->httpcode . ' data: ' . $ret . "\n";
+        if ($this->httpcode == 404) {
           $meta['error'] = 'NotFound';
-        } elseif ($httpcode == 403) {
+        } elseif ($this->httpcode == 403) {
           $meta['error'] = 'Forbidden';
         } else {
           $meta['error'] = 'Non2xx';
@@ -143,22 +207,10 @@ class Crawler {
         return $meta;
       }
 
-      if ($ret === false) {
-        #timeout or other failure
-        echo "WARNING - get_yt_meta: file_get_contents timed out or other failure\n";
-        $meta['error'] = 'Timeout';
-        return $meta;
-      }
-
-      $data = json_decode($ret, true);
-      if ($data == null || !isset($data['entry'])) {
-          echo "FAILED - get_yt_meta: Invalid youtube channel!\n";
-          $meta['error'] = 'Invalid';
-      } else {
-          $meta['title'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['entry']['title']['$t']));
-          $meta['thumbnail'] = $data['entry']['media$thumbnail']['url'];
-          $meta['description'] = str_replace("\t", '  ', str_replace("\n", '   ', $data['entry']['summary']['$t']));
-      }
+      $meta['title'] = str_replace("\t", '  ', str_replace("\n", '   ', $this->metaTitle));
+      $meta['thumbnail'] = $this->metaThumbnail;
+      $meta['description'] = str_replace("\t", '  ', str_replace("\n", '   ', $this->metaDescription));
+      $meta['updateDate'] = $this->metaUpdateDate;
 
     } else if ($this->ytType == 'playlist') {
       /*
@@ -176,6 +228,7 @@ class Crawler {
       */
 
       # use the data from get_yt_data to avoid duplicated call to youtube
+      $this->get_yt_pl_meta($this->ytId);
       $meta['title'] = $this->metaTitle;
       $meta['thumbnail'] = $this->metaThumbnail;
       $meta['description'] = $this->metaDescription;
@@ -299,9 +352,44 @@ class Crawler {
     }
   }
 
+  public function get_ul_pl_id($username) {
+    # check it's user id or channel id and get uploaded playlist id
+    if (preg_match('/^UC(.{22})$/', $username, $matches)) {
+      $ul_pl_id = 'UU' . $matches[1];
+    } else {
+
+      $opt = array(
+        'forUsername' => $username,
+      );
+      
+      $ul_pl_id = '';
+      try {
+        $ret = $this->youtube->channels->listChannels('contentDetails', $opt);
+        $this->httpcode = '200';
+        $this->httpError = '';
+        $ul_pl_id = $ret['items'][0]['contentDetails']['relatedPlaylists']['uploads'];
+      } catch (Google_ServiceException $e) {
+        $this->httpcode = '500';
+        $this->httpError = sprintf('<p>A service error occurred: <code>%s</code></p>',
+          htmlspecialchars($e->getMessage()));
+      } catch (Google_Exception $e) {
+        $this->httpcode = '404';
+        $this->httpErrort = sprintf('<p>An client error occurred: <code>%s</code></p>',
+          htmlspecialchars($e->getMessage()));
+      }
+      return $ul_pl_id;
+    }
+  }
+
   public function get_yt_data() {
     if ($this->ytType == 'channel') {
-      return $this->get_yt_channel_all($this->ytId);
+      # in V3 api, yt ch is an upload playlist
+      $this->ul_pl_id = $this->get_ul_pl_id($this->ytId);
+      if ($this->httpcode == '200') {
+        return $this->get_yt_playlist_all($this->ul_pl_id);
+      } else {
+        return null;
+      }
     } else if ($this->ytType == 'playlist') {
       return $this->get_yt_playlist_all($this->ytId);
     } else if ($this->ytType == 'facebook') {
@@ -570,6 +658,7 @@ class Crawler {
     return $lines;
   }
 
+/*
   public function get_yt_playlist($playlistId=null, $start_index=1) {
     if ($playlistId == null) {
       $playlistId = $this->ytId;
@@ -581,6 +670,37 @@ class Crawler {
     $this->httpcode = $this->header_code($this->headers);
     return $this->ytData;
   }
+*/
+
+  public function get_yt_playlist($playlistId=null, $nextPageToken=null) {
+    if ($playlistId == null) {
+      $playlistId = $this->ytId;
+    }
+
+    $opt = array(
+      'maxResults' => 50,
+      'playlistId' => $playlistId
+    );
+
+    if ($nextPageToken != null) {
+      $opt['nextPageToken'] = $nextPageToken;
+    }
+
+    try {
+      $this->httpcode = '200';
+      $this->ytData = $this->youtube->playlistItems->listPlaylistItems('snippet', $opt);
+    } catch (Google_ServiceException $e) {
+      $this->httpcode = '500';
+      $this->ytData = sprintf('<p>A service error occurred: <code>%s</code></p>',
+        htmlspecialchars($e->getMessage()));
+    } catch (Google_Exception $e) {
+      $this->httpcode = '404';
+      $this->ytData = sprintf('<p>An client error occurred: <code>%s</code></p>',
+        htmlspecialchars($e->getMessage()));
+    }
+
+    return $this->ytData;
+  }
 
   public function get_yt_playlist_all($playlistId=null) {
     if ($playlistId == null) {
@@ -589,9 +709,10 @@ class Crawler {
 
     $lines = array();
     $start_index = 1;
+    $nextPageToken = null;
 
     do {
-      $ytData = $this->get_yt_playlist($playlistId, $start_index);
+      $ytData = $this->get_yt_playlist($playlistId, $nextPageToken);
 
       if ($this->httpcode != '200') {
         echo 'FAILED - httpcode: ' . $this->httpcode . ' data: ' . $ytData . "\n";
@@ -618,9 +739,11 @@ class Crawler {
         return $lines;
       }
 
-      $d = json_decode($ytData, true);
+      #$d = json_decode($ytData, true);
+      $d = $ytData;
+      $nextPageToken = $d['nextPageToken'];
 
-      if (!isset($d['feed']['entry'])) {
+      if (!isset($d['items'])) {
         echo "WARNING - No Video entry\n";
         if ($lines == array()) {
           $this->metaError = 'Empty';
@@ -629,33 +752,36 @@ class Crawler {
         return $lines;
       }
 
+      $totalItems = $d['pageInfo']['totalResults'];
+
+      # parse_itemsV3 will have new $this->metaUpdateDate
+      $lines = array_merge($lines, $this->parse_itemsV3($d['items']));
+      
+      /*  no more real updateDate in V3
       # save the updateDate for meta
       if ($start_index == 1) {
         $this->metaError = 'OK';
-        $this->metaTitle = str_replace("\t", '  ', str_replace("\n", '   ', $d['feed']['title']['$t']));
-        $this->metaThumbnail = $this->get_yt_playlist_thumbnail($d['feed']['media$group']['media$thumbnail'], 'mqdefault');
-        $this->metaDescription = str_replace("\t", '  ', str_replace("\n", '   ', $d['feed']['subtitle']['$t']));
-        $this->metaUpdateDate = strtotime($d['feed']['updated']['$t']);
+        #$this->metaTitle = str_replace("\t", '  ', str_replace("\n", '   ', $d['feed']['title']['$t']));
+        #$this->metaThumbnail = $this->get_yt_playlist_thumbnail($d['feed']['media$group']['media$thumbnail'], 'mqdefault');
+        #$this->metaDescription = str_replace("\t", '  ', str_replace("\n", '   ', $d['feed']['subtitle']['$t']));
+        #$this->metaUpdateDate = strtotime($d['feed']['updated']['$t']);
         if ($this->metaPrevious != '') {
           # compare updateDate with pervious meta data
           $oldMeta = json_decode($this->metaPrevious);
-          if ($this->metaUpdateDate != 0 and $oldMeta->updateDate >= $this->metaUpdateDate
-                                         and $oldMeta->isRealtime != "true") {
-            # No need to update the feed.  No further call to youtube
-            $lines = array();
-            $this->metaError = 'NoUpdate';
-            echo "No update to playlist\n";
-            return $lines;
-          }
+          #if ($this->metaUpdateDate != 0 and $oldMeta->updateDate >= $this->metaUpdateDate
+          #                               and $oldMeta->isRealtime != "true") {
+          #  # No need to update the feed.  No further call to youtube
+          #  $lines = array();
+          #  $this->metaError = 'NoUpdate';
+          #  echo "No update to playlist\n";
+          #  return $lines;
+          #}
         }
       }
+     */
 
-      $totalItems = $d['feed']['openSearch$totalResults']['$t'];
-
-      $lines = array_merge($lines, $this->parse_items($d['feed']['entry']));
-      
       $start_index = $start_index + 50;
-    } while ($start_index < 201 and $totalItems >= $start_index);
+    } while ($start_index < 1 and $totalItems >= $start_index);
 
     if ($lines == array()) {
       $this->metaError = 'Empty';
@@ -759,6 +885,52 @@ class Crawler {
         'state' => (isset($i['app$control']['yt$state']['name']) && $i['app$control']['yt$state']['name'] == 'restricted') ? 'restricted' : 'fine',
         'reason' => (isset($i['app$control']['yt$state']['reasonCode'])) ? $i['app$control']['yt$state']['reasonCode'] : 'fine'
       );
+
+      $line = implode("\t", $data);
+      $lines[] = $line;
+    }
+
+    return $lines;
+  }
+
+  public function parse_itemsV3($items, $chId=null, $type=null) {
+    if ($chId == null) {
+      $chId = $this->chId;
+    }
+
+    if ($type == null) {
+      $type = $this->ytType;
+    }
+
+    $lines = array();
+    $this->metaUpdateDate = 0;
+    foreach ($items as $i) {
+
+      $data = array(
+        'chId' => $chId,
+        'uploader' => $i['snippet']['channelTitle'],
+        'crawlTime' => $this->crawlTime,
+        'id' => $i['snippet']['resourceId']['videoId'],
+        # remove LF and tab
+        'title' => str_replace("\t", '  ', str_replace("\n", '   ', $i['snippet']['title'])),
+        'uploaded' => strtotime($i['snippet']['publishedAt']),
+        #'duration' => (isset($i['media$group']['yt$duration']['seconds']) ? $i['media$group']['yt$duration']['seconds'] : 0),
+        # no duration in V3 playlistitems
+        'duration' => 0,
+        # use mqDefault as thumbnail, but it is not listed in json, so construct it from sqDefault
+        #'thumbnail' => (isset($i->thumbnail->sqDefault) ? str_replace('/default.jpg', '/mqdefault.jpg', $i->thumbnail->sqDefault) : $i->thumbnail->hqDefault),
+        'thumbnail' => $i['snippet']['thumbnails']['medium']['url'],
+        #'description' => str_replace("\t", '  ', str_replace("\n", '   ', (isset($i['media$group']['media$description']['$t'])) ? $i['media$group']['media$description']['$t'] : '')),
+        'description' => str_replace("\t", '  ', str_replace("\n", '   ',  $i['snippet']['description'])),
+        #'state' => (isset($i['app$control']['yt$state']['name']) && $i['app$control']['yt$state']['name'] == 'restricted') ? 'restricted' : 'fine',
+        'state' => 'fine',
+        'reason' => 'fine'
+      );
+
+      # use the lastest date in video as updateDate as we are interesting only new videos
+      if ($this->metaUpdateDate < $data['uploaded']) {
+        $this->metaUpdateDate = $data['uploaded'];
+      }
 
       $line = implode("\t", $data);
       $lines[] = $line;
