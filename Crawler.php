@@ -355,30 +355,32 @@ class Crawler {
   public function get_ul_pl_id($username) {
     # check it's user id or channel id and get uploaded playlist id
     if (preg_match('/^UC(.{22})$/', $username, $matches)) {
-      $ul_pl_id = 'UU' . $matches[1];
+      $opt = array(
+        'id' => $username,
+      );
     } else {
-
       $opt = array(
         'forUsername' => $username,
       );
-      
-      $ul_pl_id = '';
-      try {
-        $ret = $this->youtube->channels->listChannels('contentDetails', $opt);
-        $this->httpcode = '200';
-        $this->httpError = '';
-        $ul_pl_id = $ret['items'][0]['contentDetails']['relatedPlaylists']['uploads'];
-      } catch (Google_ServiceException $e) {
-        $this->httpcode = '500';
-        $this->httpError = sprintf('<p>A service error occurred: <code>%s</code></p>',
-          htmlspecialchars($e->getMessage()));
-      } catch (Google_Exception $e) {
-        $this->httpcode = '404';
-        $this->httpErrort = sprintf('<p>An client error occurred: <code>%s</code></p>',
-          htmlspecialchars($e->getMessage()));
-      }
-      return $ul_pl_id;
     }
+      
+    $ul_pl_id = '';
+    try {
+      $ret = $this->youtube->channels->listChannels('contentDetails', $opt);
+      $this->httpcode = '200';
+      $this->httpError = '';
+      $ul_pl_id = $ret['items'][0]['contentDetails']['relatedPlaylists']['uploads'];
+    } catch (Google_ServiceException $e) {
+      $this->httpcode = '500';
+      $this->httpError = sprintf('<p>A service error occurred: <code>%s</code></p>',
+        htmlspecialchars($e->getMessage()));
+    } catch (Google_Exception $e) {
+      $this->httpcode = '404';
+      $this->httpErrort = sprintf('<p>An client error occurred: <code>%s</code></p>',
+        htmlspecialchars($e->getMessage()));
+    }
+
+    return $ul_pl_id;
   }
 
   public function get_yt_data() {
